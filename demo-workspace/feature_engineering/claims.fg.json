@@ -1,0 +1,133 @@
+{
+    "feature_group_name": "claims",
+    "event_time_feature_name": "event_time",
+    "record_identifier_feature_name": "policy_id",
+    "enable_online_store": false,
+    "disable_glue_table_creation": false,
+    "column_schemas": [
+    {
+      "name": "policy_id",
+      "type": "long"
+    },
+    {
+      "name": "incident_severity",
+      "type": "long"
+    },
+    {
+      "name": "num_vehicles_involved",
+      "type": "long"
+    },
+    {
+      "name": "num_injuries",
+      "type": "long"
+    },
+    {
+      "name": "num_witnesses",
+      "type": "long"
+    },
+    {
+      "name": "police_report_available",
+      "type": "long"
+    },
+    {
+      "name": "injury_claim",
+      "type": "float"
+    },
+    {
+      "name": "vehicle_claim",
+      "type": "float"
+    },
+    {
+      "name": "total_claim_amount",
+      "type": "float"
+    },
+    {
+      "name": "incident_month",
+      "type": "long"
+    },
+    {
+      "name": "incident_day",
+      "type": "long"
+    },
+    {
+      "name": "incident_dow",
+      "type": "long"
+    },
+    {
+      "name": "incident_hour",
+      "type": "long"
+    },
+    {
+      "name": "fraud",
+      "type": "long"
+    },
+    {
+      "name": "driver_relationship_self",
+      "type": "long"
+    },
+    {
+      "name": "driver_relationship_na",
+      "type": "long"
+    },
+    {
+      "name": "driver_relationship_spouse",
+      "type": "long"
+    },
+    {
+      "name": "driver_relationship_child",
+      "type": "long"
+    },
+    {
+      "name": "driver_relationship_other",
+      "type": "long"
+    },
+    {
+      "name": "incident_type_collision",
+      "type": "long"
+    },
+    {
+      "name": "incident_type_breakin",
+      "type": "long"
+    },
+    {
+      "name": "incident_type_theft",
+      "type": "long"
+    },
+    {
+      "name": "collision_type_front",
+      "type": "long"
+    },
+    {
+      "name": "collision_type_rear",
+      "type": "long"
+    },
+    {
+      "name": "collision_type_side",
+      "type": "long"
+    },
+    {
+      "name": "collision_type_na",
+      "type": "long"
+    },
+    {
+      "name": "authorities_contacted_police",
+      "type": "long"
+    },
+    {
+      "name": "authorities_contacted_none",
+      "type": "long"
+    },
+    {
+      "name": "authorities_contacted_ambulance",
+      "type": "long"
+    },
+    {
+      "name": "authorities_contacted_fire",
+      "type": "long"
+    },
+    {
+      "name": "event_time",
+      "type": "float"
+    }
+  ]
+}

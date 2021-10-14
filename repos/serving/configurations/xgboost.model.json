@@ -1,0 +1,97 @@
+{ 
+    "model_name": "xgboost",
+    "model_package_group_name": "xgboost",
+    "features_names": [
+        "incident_severity",
+        "num_vehicles_involved",
+        "num_injuries",
+        "num_witnesses",
+        "police_report_available",
+        "injury_claim",
+        "vehicle_claim",
+        "total_claim_amount",
+        "incident_month",
+        "incident_day",
+        "incident_dow",
+        "incident_hour",
+        "driver_relationship_self",
+        "driver_relationship_na",
+        "driver_relationship_spouse",
+        "driver_relationship_child",
+        "driver_relationship_other",
+        "incident_type_collision",
+        "incident_type_breakin",
+        "incident_type_theft",
+        "collision_type_front",
+        "collision_type_rear",
+        "collision_type_side",
+        "collision_type_na",
+        "authorities_contacted_police",
+        "authorities_contacted_none",
+        "authorities_contacted_fire",
+        "authorities_contacted_ambulance",
+        "customer_age",
+        "customer_education",
+        "months_as_customer",
+        "policy_deductable",
+        "policy_annual_premium",
+        "policy_liability",
+        "auto_year",
+        "num_claims_past_year",
+        "num_insurers_past_5_years",
+        "customer_gender_male",
+        "customer_gender_female",
+        "policy_state_ca",
+        "policy_state_wa",
+        "policy_state_az",
+        "policy_state_or",
+        "policy_state_nv",
+        "policy_state_id"
+    ],
+    "batch_transforms": [
+        {
+            "code_file_path": "pipelines/batch_transform_serving_pipeline.py",
+            "pipeline_name": "batch-transform",
+            "index_name": "policy_id",
+            "pipeline_configuration": {
+                "customers_fg_name": "customers",
+                "claims_fg_name": "claims",
+                "create_dataset_script_path": "scripts/create_dataset.py",
+                "prefix": "batch-transform",
+                "model_entry_point": "scripts/xgboost_starter_script.py"
+            }
+        }
+    ],
+    "endpoints": [
+        {
+            "endpoint_name": "xgboost",
+            "variants": [
+                {
+                    "variant_name": "development",
+                    "stage_name": "prod",
+                    "instance_count": 1,
+                    "instance_type": "ml.m5.large",
+                    "initial_variant_weight": 1
+                }
+            ],
+            "schedule_config": {
+                "data_capture_sampling_percentage": 100,
+                "schedule_expression": "cron(0 * ? * * *)",
+                "metric_name": "feature_data_fraud",
+                "metric_threshold": 0.5,
+                "statistic": "Maximum",
+                "datapoints_to_alarm": 1,
+                "evaluation_periods": 1,
+                "period": 3600,
+                "comparison_operator": "LessThanThreshold"
+            },
+            "prefix": "realtime-inference",
+            "lambda_entry_point": "lambdas/functions/xgboost_inference",
+            "lambda_environment": {
+                "customers_fg_name": "customers",
+                "claims_fg_name": "claims",
+                "content_type": "text/csv"
+            }
+        }
+    ]
+}

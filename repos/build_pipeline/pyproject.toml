@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "build_model_pipeline"
+version = "0.1.0"
+description = "Create the feature groups in SageMaker FeatureStore and create a SageMaker pipeline to populate the FG."
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+"aws-cdk.aws-sagemaker" = "^1.119.0"
+"aws-cdk.aws-iam" = "^1.119.0"
+"aws-cdk.aws-s3" = "^1.119.0"
+sagemaker = "^2.54.0"
+"aws-cdk.aws-s3-assets" = "^1.119.0"
+"aws-cdk.aws-codepipeline-actions" = "^1.127.0"
+
+[tool.poetry.dev-dependencies]
+black = {version = "^21.7b0", allow-prereleases = true}
+xgboost = "^1.4.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
