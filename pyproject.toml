@@ -9,19 +9,21 @@ python = "^3.8, <3.10"
 "aws-cdk.aws-servicecatalog" = "^1.118.0"
 "aws-cdk.aws-codepipeline-actions" = "^1.118.0"
 sagemaker = "^2.54.0"
+"aws-cdk.aws-lambda-event-sources" = "^1.128.0"
 
 [tool.poetry.dev-dependencies]
-boto3-stubs = {extras = ["essential", "servicecatalog", "sagemaker", "efs", "sqs"], version = "^1.18.26"}
+boto3-stubs = {extras = ["essential", "servicecatalog", "sagemaker", "efs", "sqs", "ssm"], version = "^1.18.26"}
 black = {version = "^21.7b0", allow-prereleases = true}
 requests = "^2.25.0"
 awswrangler = "^2.10.0"
-"aws-cdk.aws-sagemaker" = "^1.118.0"
-"aws-cdk.pipelines" = "^1.119.0"
+# "aws-cdk.pipelines" = "^1.119.0"
 "aws-cdk.aws-dynamodb" = "^1.120.0"
-ipykernel = "^6.2.0"
-scikit-learn = "^0.24.2"
-xgboost = "^1.4.2"
+"aws-cdk.aws-sagemaker" = "^1.118.0"
 "aws-cdk.aws-stepfunctions-tasks" = "^1.127.0"
+ipykernel = "^6.2.0"
+scikit-learn = "0.23.1"
+xgboost = "1.3.1"
+aws-lambda-powertools = "^1.21.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
