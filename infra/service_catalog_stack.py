@@ -148,6 +148,7 @@ def launch_role_policies(target_role: iam.Role):
                 "SNS:ListTagsForResource",
                 "SNS:TagResource",
                 "SNS:UnTagResource",
+                "SNS:Subscribe",
             ],
             resources=[
                 f"arn:aws:sns:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:sagemaker-*"
@@ -189,6 +190,15 @@ def launch_role_policies(target_role: iam.Role):
             ],
             resources=[
                 f"arn:aws:ssm:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:parameter/sagemaker*"
+            ],
+        )
+    )
+
+    target_role.add_to_principal_policy(
+        iam.PolicyStatement(
+            actions=["lambda:GetLayerVersion"],
+            resources=[
+                f"arn:aws:lambda:{cdk.Aws.REGION}:017000801446:layer:AWSLambdaPowertoolsPython:3"
             ],
         )
     )

@@ -27,7 +27,6 @@ class cicd_construct(cdk.Construct):
         project_id: str,
         sns_topic: sns.Topic,
         roles: Dict[str, iam.Role] = None,
-        debug_mode: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -178,6 +177,7 @@ class cicd_construct(cdk.Construct):
             input=source_artifact,
             outputs=[cloud_assembly_artifact],
             role=code_pipeline_role,
+            run_order=1,
         )
 
         # deploy the synthetized project
@@ -206,26 +206,37 @@ class cicd_construct(cdk.Construct):
             stage_name="Source",
             actions=[source_action],
         )
-        pipeline.add_stage(
+        build_stage = pipeline.add_stage(
             stage_name="Synth",
             actions=[build_action],
         )
 
-        if not debug_mode:
-            pipeline.add_stage(
-                stage_name="ManualApproval",
-                actions=[
-                    codepipeline_actions.ManualApprovalAction(
-                        external_entity_link=f"https://{cdk.Aws.REGION}.console.aws.amazon.com/codesuite/codecommit/repositories/{repo.repository_name}/commit/{source_action.variables.commit_id}",
-                        action_name="ManualApproval",
-                        notification_topic=sns_topic,
-                        role=code_pipeline_role,
-                        additional_information=f"{project_name}-{construct_id} ready to be deployed.\n"
-                        f"Commit {source_action.variables.commit_id}\n\n"
-                        f"{source_action.variables.commit_message}",
-                    )
-                ],
-            )
+        approval_action = codepipeline_actions.ManualApprovalAction(
+            # external_entity_link=f"https://{cdk.Aws.REGION}.console.aws.amazon.com/codesuite/"
+            #    f"codecommit/repositories/{repo.repository_name}/"
+            #    f"commit/{source_action.variables.commit_id}",
+            external_entity_link=f"https://{cdk.Aws.REGION}.console.aws.amazon.com/codesuite/codebuild/"
+                f"{cdk.Aws.ACCOUNT_ID}/projects/{build_project.project_name}/"
+                f"build/{build_action.variable('CODEBUILD_BUILD_ID').replace(':', '%3A')}",
+            action_name="ManualApproval",
+            notification_topic=sns_topic,
+            role=code_pipeline_role,
+            additional_information=f"{project_name}-{construct_id} ready to be deployed.\n"
+            f"Commit {source_action.variables.commit_id}\n"
+            f"{source_action.variables.commit_message}",
+            run_order=2,
+        )
+        build_stage.add_action(approval_action)
+
+        ssm.StringParameter(
+            self,
+            f"AutoApprovalFlag",
+            parameter_name=f"/sagemaker-{project_name}/{construct_id}/AutoApprovalFlag",
+            simple_name=False,
+            string_value="1",
+            allowed_pattern="[0,1]"
+        )
+
         pipeline.add_stage(
             stage_name="Deploy",
             actions=[deploy_action],
@@ -249,7 +260,7 @@ build_spec = codebuild.BuildSpec.from_object(
             },
             build=dict(
                 commands=[
-                    "npx cdk synth",
+                    "npx cdk diff --path-metadata false",
                 ]
             ),
         ),
@@ -259,6 +270,7 @@ build_spec = codebuild.BuildSpec.from_object(
                 "**/*",
             ],
         },
+        env={"exported-variables": ["CODEBUILD_BUILD_ID", "CODEBUILD_BUILD_NUMBER"]},
     )
 )
 

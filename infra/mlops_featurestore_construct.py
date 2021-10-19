@@ -4,6 +4,8 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_assets as s3_assets
 from aws_cdk import aws_sns as sns
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_lambda_event_sources as lambda_event_sources
 from aws_cdk import core as cdk
 
 from infra.cicd_construct import cicd_construct
@@ -97,11 +99,6 @@ class MlopsFeaturestoreConstruct(cdk.Construct):
         roles_dict = {k: products_use_role.role_arn for k in roles_names_list}
 
         # bucket to store configurations, artifacts, etc.
-        project_bucket = s3.Bucket(
-            self,
-            "ProjectBucket",
-            bucket_name=f"sagemaker-{project_id}-{uuid4().hex[:7]}",
-        )
         if debug_mode:
             project_bucket = s3.Bucket(
                 self,
@@ -109,9 +106,15 @@ class MlopsFeaturestoreConstruct(cdk.Construct):
                 auto_delete_objects=debug_mode,
                 removal_policy=cdk.RemovalPolicy.DESTROY,
             )
+            project_bucket.grant_read(products_use_role)
 
-
-        project_bucket.node.add_dependency(policy_result.policy_dependable)
+        else:
+            project_bucket = s3.Bucket(
+                self,
+                "ProjectBucket",
+                bucket_name=f"sagemaker-{project_id}-{uuid4().hex[:7]}",
+            )
+            project_bucket.node.add_dependency(policy_result.policy_dependable)
 
         cicd_topic = sns.Topic(
             self,
@@ -119,7 +122,39 @@ class MlopsFeaturestoreConstruct(cdk.Construct):
             display_name=f"{project_name} CI/CD notifications",
             topic_name=f"sagemaker-{project_id}-cicd-topic",
         )
+
         cicd_topic.grant_publish(products_use_role)
+
+        with open("lambdas/functions/auto_approval/lambda.py", encoding="utf8") as fp:
+            lambda_auto_approve_code = fp.read()
+        lambda_approval = lambda_.Function(
+            self,
+            "AutoApprovalLambda",
+            function_name=f"sagemaker-{project_name}-auto-approval",
+            code=lambda_.Code.from_inline(lambda_auto_approve_code),
+            role=products_use_role,
+            handler="index.lambda_handler",
+            runtime=lambda_.Runtime.PYTHON_3_8,
+            timeout=cdk.Duration.seconds(3),
+            memory_size=128,
+            environment={
+                "PROJECT_NAME": project_name,
+                "PROJECT_ID": project_id,
+            },
+            layers=[
+                lambda_.LayerVersion.from_layer_version_arn(
+                    self,
+                    "LambdaPowerToolsLayer",
+                    layer_version_arn=f"arn:aws:lambda:{cdk.Aws.REGION}:017000801446:layer:AWSLambdaPowertoolsPython:3",
+                )
+            ],
+        )
+        lambda_approval.add_event_source(
+            lambda_event_sources.SnsEventSource(
+                cicd_topic,
+                # filter_policy=
+            )
+        )
 
         cicd_dict = {
             name: cicd_construct(
@@ -133,7 +168,6 @@ class MlopsFeaturestoreConstruct(cdk.Construct):
                 project_id=project_id,
                 sns_topic=cicd_topic,
                 roles=roles_dict,
-                debug_mode=debug_mode,
             )
             for name, o in code_assets.items()
         }
@@ -222,10 +256,10 @@ def update_execution_policies(
             ],
             resources=[
                 f"arn:aws:ssm:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:parameter/cdk-bootstrap/*",
+                f"arn:aws:ssm:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:parameter/sagemaker-{project_name}*",
             ],
         )
     )
-
 
     target_role.add_to_principal_policy(
         iam.PolicyStatement(
@@ -267,6 +301,18 @@ def update_execution_policies(
             ],
         )
     )
+
+    target_role.add_to_principal_policy(
+        iam.PolicyStatement(
+            actions=[
+                "codepipeline:PutApprovalResult",
+            ],
+            resources=[
+                f"arn:aws:codepipeline:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:sagemaker-{project_id}*",
+            ],
+        )
+    )
+
     target_role.add_to_principal_policy(
         iam.PolicyStatement(
             actions=[
@@ -322,7 +368,9 @@ def update_execution_policies(
     target_role.add_to_principal_policy(
         iam.PolicyStatement(
             actions=["glue:StartJobRun"],
-            resources=[f"arn:aws:glue:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:job/sagemaker-*"],
+            resources=[
+                f"arn:aws:glue:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:job/sagemaker-*"
+            ],
         )
     )
 
@@ -343,9 +391,11 @@ def update_execution_policies(
                 "dynamodb:GetItem",
                 "dynamodb:Scan",
                 "dynamodb:ConditionCheckItem",
-                "dynamodb:DescribeTable"
+                "dynamodb:DescribeTable",
             ],
-            resources=[f"arn:aws:dynamodb:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:table/sagemaker-{project_id}*"],
+            resources=[
+                f"arn:aws:dynamodb:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:table/sagemaker-{project_id}*"
+            ],
         )
     )
 

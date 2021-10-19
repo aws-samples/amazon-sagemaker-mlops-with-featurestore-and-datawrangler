@@ -73,11 +73,10 @@ def code_asset_upload(stack: cdk.Stack, dir_path: Path, read_role: Role):
         f"{dir_path.name}CodeSeed",
         path=archive,
     )
-    # asset = s3_assets.Asset(
+    # asset = Asset(
     #     self, f"{dir_path.name}CodeSeed", path=dir_path.as_posix()
     # )
     asset.grant_read(read_role)
-
     return asset
 
 

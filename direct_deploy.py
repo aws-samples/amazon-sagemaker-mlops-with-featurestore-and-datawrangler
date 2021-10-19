@@ -67,6 +67,6 @@ app = cdk.App()
 
 MlopsFeaturestoreStack(
     app,
-    "MlopsFeaturestoreStack",
+    "sagemaker-mlops",
 )
 app.synth()
