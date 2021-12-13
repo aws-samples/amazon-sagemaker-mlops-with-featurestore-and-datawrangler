@@ -119,7 +119,7 @@ The SageMaker Project template also includes a Demo repository that contains two
 
 ## Running Costs
 
-This section outlines cost considerations for running the Drift Detection Pipeline. Completing the pipeline will deploy an endpoint with 1 production variants which will cost less than $4 per day. Further cost breakdowns are below.
+This section outlines cost considerations for running the Auto Clain Fraud Detection Pipeline. Completing the pipeline will deploy an endpoint with 1 production variants which will cost less than $4 per day. Further cost breakdowns are below.
 
 - **CodeBuild** – Charges per minute used. First 100 minutes each month come at no charge. For information on pricing beyond the first 100 minutes, see [AWS CodeBuild Pricing](https://aws.amazon.com/codebuild/pricing/).
 
