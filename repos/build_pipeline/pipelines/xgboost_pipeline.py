@@ -256,7 +256,7 @@ def dataset_step(
     instance_count: int = 1,
     depends_on: List[Step] = None,
     **kwargs,
-) -> Step:
+ ) -> Step:
     default_bucket = sagemaker_session.default_bucket()
     client = sagemaker_session.boto_session.client("sagemaker")
     customers_fg_name = kwargs["customers_fg_name"]
@@ -357,7 +357,7 @@ def data_quality_baseline(
     )
 
     # Create the baseline job using
-    dataset_format = DatasetFormat.csv()
+    dataset_format = DatasetFormat.csv(header=True)
     env = {
         "dataset_format": json.dumps(dataset_format),
         "dataset_source": "/opt/ml/processing/input/baseline_dataset_input",
