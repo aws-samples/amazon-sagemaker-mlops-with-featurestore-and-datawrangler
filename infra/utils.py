@@ -1,11 +1,12 @@
 import shutil
 from pathlib import Path
 
+import aws_cdk as cdk
 import boto3
 from aws_cdk import aws_codecommit as codecommit
-from aws_cdk import core as cdk
 from aws_cdk.aws_iam import Role
 from aws_cdk.aws_s3_assets import Asset
+from constructs import Construct
 
 
 def generate_template(stack: cdk.Stack, stack_name: str, **kwargs) -> str:
@@ -28,7 +29,7 @@ def generate_template(stack: cdk.Stack, stack_name: str, **kwargs) -> str:
 class Repository(object):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         repository_name: str,
         code_bucket: str,

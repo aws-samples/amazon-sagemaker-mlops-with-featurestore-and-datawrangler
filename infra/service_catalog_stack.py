@@ -1,8 +1,9 @@
 from pathlib import Path
 
+from aws_cdk import Aws, CfnParameter, Stack, Tags
 from aws_cdk import aws_iam as iam
-from aws_cdk import aws_servicecatalog as servicecatalog
-from aws_cdk import core as cdk
+from aws_cdk import aws_servicecatalog_alpha as servicecatalog
+from constructs import Construct
 
 from infra.mlops_featurestore_construct import MlopsFeaturestoreStack
 from infra.utils import (
@@ -15,17 +16,17 @@ from infra.utils import (
 sm_studio_user_role_arn = get_default_sagemaker_role()
 
 
-class ServiceCatalogStack(cdk.Stack):
+class ServiceCatalogStack(Stack):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         # Define CloudFormation Parameters
-        portfolio_name = cdk.CfnParameter(
+        portfolio_name = CfnParameter(
             self,
             "PortfolioName",
             type="String",
@@ -33,7 +34,7 @@ class ServiceCatalogStack(cdk.Stack):
             default="SageMaker Organization Templates",
             min_length=1,
         )
-        portfolio_owner = cdk.CfnParameter(
+        portfolio_owner = CfnParameter(
             self,
             "PortfolioOwner",
             type="String",
@@ -42,7 +43,7 @@ class ServiceCatalogStack(cdk.Stack):
             min_length=1,
             max_length=50,
         )
-        product_version = cdk.CfnParameter(
+        product_version = CfnParameter(
             self,
             "ProductVersion",
             type="String",
@@ -115,7 +116,7 @@ class ServiceCatalogStack(cdk.Stack):
             ],
             description="Amazon SageMaker Project for a build and deployment pipeline",
         )
-        cdk.Tags.of(product).add(key="sagemaker:studio-visibility", value="true")
+        Tags.of(product).add(key="sagemaker:studio-visibility", value="true")
 
         portfolio.add_product(product)
         portfolio.give_access_to_role(
@@ -149,10 +150,9 @@ def launch_role_policies(target_role: iam.Role):
                 "SNS:TagResource",
                 "SNS:UnTagResource",
                 "SNS:Subscribe",
+                "SNS:Unsubscribe",
             ],
-            resources=[
-                f"arn:aws:sns:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:sagemaker-*"
-            ],
+            resources=[f"arn:aws:sns:{Aws.REGION}:{Aws.ACCOUNT_ID}:sagemaker-*"],
         )
     )
     target_role.add_to_principal_policy(
@@ -172,7 +172,7 @@ def launch_role_policies(target_role: iam.Role):
         iam.PolicyStatement(
             actions=["ssm:GetParameter"],
             resources=[
-                f"arn:aws:ssm:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:parameter/cdk-bootstrap/*"
+                f"arn:aws:ssm:{Aws.REGION}:{Aws.ACCOUNT_ID}:parameter/cdk-bootstrap/*"
             ],
         )
     )
@@ -187,9 +187,11 @@ def launch_role_policies(target_role: iam.Role):
                 "ssm:LabelParameterVersion",
                 "ssm:ListTagsForResource",
                 "ssm:RemoveTagsFromResource",
+                "ssm:DeleteParameter",
+                "ssm:DeleteParameters",
             ],
             resources=[
-                f"arn:aws:ssm:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:parameter/sagemaker*"
+                f"arn:aws:ssm:{Aws.REGION}:{Aws.ACCOUNT_ID}:parameter/sagemaker*"
             ],
         )
     )
@@ -198,7 +200,7 @@ def launch_role_policies(target_role: iam.Role):
         iam.PolicyStatement(
             actions=["lambda:GetLayerVersion"],
             resources=[
-                f"arn:aws:lambda:{cdk.Aws.REGION}:017000801446:layer:AWSLambdaPowertoolsPython:3"
+                f"arn:aws:lambda:{Aws.REGION}:017000801446:layer:AWSLambdaPowertoolsPython:3"
             ],
         )
     )
