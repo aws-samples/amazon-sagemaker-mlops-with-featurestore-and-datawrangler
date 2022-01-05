@@ -1,8 +1,6 @@
 {
   "app": "python3 app.py",
   "context": {
-    "drift:ProductsUseRoleName": "service-role/AmazonSageMakerServiceCatalogProductsUseRole",
-    "drift:ProductsLaunchRoleName": "service-role/AmazonSageMakerServiceCatalogProductsLaunchRole"
   },
   "versionReporting": false,
   "requireApproval": "never"

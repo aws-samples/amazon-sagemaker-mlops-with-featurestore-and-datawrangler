@@ -27,7 +27,6 @@ execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
 glue_role_arn = os.getenv("GLUE_ROLE_ARN")
 api_gateway_role_arn = os.getenv("API_GATEWAY_ROLE_ARN")
 lambda_role_arn = os.getenv("LAMBDA_ROLE_ARN")
-sm_studio_user_role_arn = os.getenv("SAGEMAKER_STUDIO_USER_ROLE_ARN")
 
 
 class GlueDynamoDb(cdk.Construct):

@@ -75,7 +75,7 @@ def code_asset_upload(stack: cdk.Stack, dir_path: Path, read_role: Role):
         path=archive,
     )
     # asset = Asset(
-    #     self, f"{dir_path.name}CodeSeed", path=dir_path.as_posix()
+    #     stack, f"{dir_path.name}CodeSeed", path=dir_path.as_posix()
     # )
     asset.grant_read(read_role)
     return asset

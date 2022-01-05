@@ -18,7 +18,6 @@ pipeline_construct_id = os.getenv("CODEPIPELINE_CONSTRUCT_ID")
 project_name = os.getenv("SAGEMAKER_PROJECT_NAME")
 project_id = os.getenv("SAGEMAKER_PROJECT_ID")
 sagemaker_execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
-sm_studio_user_role_arn = os.getenv("SAGEMAKER_STUDIO_USER_ROLE_ARN")
 events_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 
 logger = logging.getLogger()

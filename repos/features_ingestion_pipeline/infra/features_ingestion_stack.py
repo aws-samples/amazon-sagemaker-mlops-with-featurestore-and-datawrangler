@@ -18,7 +18,7 @@ project_bucket_name = os.getenv("PROJECT_BUCKET")
 sagemaker_execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
 project_name = os.getenv("SAGEMAKER_PROJECT_NAME")
 project_id = os.getenv("SAGEMAKER_PROJECT_ID")
-sm_studio_user_role_arn = os.getenv("SAGEMAKER_STUDIO_USER_ROLE_ARN")
+# sm_studio_user_role_arn = os.getenv("SAGEMAKER_STUDIO_USER_ROLE_ARN")
 events_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 
 logger = logging.getLogger()
@@ -50,9 +50,9 @@ class FeatureIngestionStack(cdk.Stack):
         #     ],
         # )
 
-        sm_studio_user_role = iam.Role.from_role_arn(
-            self, "SageMakerStudioUserRole", role_arn=sm_studio_user_role_arn
-        )
+        # sm_studio_user_role = iam.Role.from_role_arn(
+        #     self, "SageMakerStudioUserRole", role_arn=sm_studio_user_role_arn
+        # )
         sagemaker_execution_role = iam.Role.from_role_arn(
             self, "SageMakerExecutionRole", role_arn=sagemaker_execution_role_arn
         )
@@ -149,7 +149,7 @@ class FeatureIngestionStack(cdk.Stack):
                 parameter_name=f"/sagemaker-{project_name}/{pipeline_conf['feature_group_name']}",
                 string_value=f"s3://{project_bucket_name}/data/raw/{pipeline_conf['feature_group_name']}.csv",
             )
-            input_data_uri.grant_read(sm_studio_user_role)
+            # input_data_uri.grant_read(sm_studio_user_role)
 
             self.add_sagemaker_pipeline_target(
                 rule.node.default_child,
