@@ -1,3 +1,4 @@
+import re
 import shutil
 from pathlib import Path
 
@@ -93,3 +94,8 @@ def get_default_sagemaker_role():
 
 def snake2pascal(test_str: str):
     return test_str.replace("_", " ").title().replace(" ", "")
+
+
+def pascal2snake(name):
+    name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
