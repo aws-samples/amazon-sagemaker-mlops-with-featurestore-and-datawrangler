@@ -4,12 +4,13 @@ from pathlib import Path
 from typing import List, Union
 from uuid import uuid4
 
+import aws_cdk as cdk
 from aws_cdk import aws_events as events
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_sagemaker as sagemaker
 from aws_cdk import aws_ssm as ssm
-from aws_cdk import core as cdk
+from constructs import Construct
 
 from infra.feature_store_utils import get_fg_conf
 from infra.sm_pipeline_utils import generate_pipeline_definition, get_pipeline_props
@@ -18,7 +19,6 @@ project_bucket_name = os.getenv("PROJECT_BUCKET")
 sagemaker_execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
 project_name = os.getenv("SAGEMAKER_PROJECT_NAME")
 project_id = os.getenv("SAGEMAKER_PROJECT_ID")
-# sm_studio_user_role_arn = os.getenv("SAGEMAKER_STUDIO_USER_ROLE_ARN")
 events_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 
 logger = logging.getLogger()
@@ -32,7 +32,7 @@ tags = [
 class FeatureIngestionStack(cdk.Stack):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         configuration_path: Union[str, Path],
         **kwargs,
@@ -101,12 +101,13 @@ class FeatureIngestionStack(cdk.Stack):
             fg_configuration = get_fg_conf(
                 file_path=k, bucket_name=offline_bucket.bucket_name
             )
+
+            fg_configuration["tags"] = fg_configuration["tags"] + tags
             sagemaker.CfnFeatureGroup(
                 self,
                 f"FeatureGroup{fg_configuration['feature_group_name']}",
                 **fg_configuration,
                 role_arn=sagemaker_execution_role_arn,
-                tags=tags,
             )
 
         ### Create SM pipelines from configurations files

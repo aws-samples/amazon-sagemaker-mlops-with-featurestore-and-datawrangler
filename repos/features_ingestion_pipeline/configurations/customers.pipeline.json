@@ -1,9 +1,8 @@
 {
-    "code_file_path": "pipelines/feature_ingestion_pipeline.py",
-    "pipeline_name":"customers-preprocessing",
-    "pipeline_configuration":{
-        "flow_file_path":"configurations/customers.flow",
-        "feature_group_name":"customers"
-    }
-
+  "pipeline_name": "customers-preprocessing",
+  "code_file_path": "pipelines/feature_ingestion_pipeline.py",
+  "pipeline_configuration": {
+    "flow_file_path": "pipelines/customers.flow",
+    "feature_group_name": "customers"
+  }
 }

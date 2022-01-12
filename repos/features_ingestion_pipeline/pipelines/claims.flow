@@ -1,11 +1,10 @@
 {
   "metadata": {
-    "version": 1,
-    "disable_limits": false
+    "version": 1
   },
   "nodes": [
     {
-      "node_id": "78a99cac-059b-4404-9f8c-b8c2f4bc7d09",
+      "node_id": "e5d60d4f-6284-4a68-a788-39787909ebc9",
       "type": "SOURCE",
       "operator": "sagemaker.s3_source_0.1",
       "parameters": {
@@ -16,10 +15,9 @@
           "description": null,
           "s3ExecutionContext": {
             "__typename": "S3ExecutionContext",
-            "s3Uri": "s3://sagemaker-ap-southeast-1-570358149193/mlops-featurestore/data/raw/claims.csv",
+            "s3Uri": "",
             "s3ContentType": "csv",
-            "s3HasHeader": true,
-            "s3FieldDelimiter": ","
+            "s3HasHeader": true
           }
         }
       },
@@ -39,11 +37,32 @@
       "type": "TRANSFORM",
       "operator": "sagemaker.spark.infer_and_cast_type_0.1",
       "parameters": {},
-      "trained_parameters": {},
+      "trained_parameters": {
+        "schema": {
+          "policy_id": "long",
+          "driver_relationship": "string",
+          "incident_type": "string",
+          "collision_type": "string",
+          "incident_severity": "string",
+          "authorities_contacted": "string",
+          "num_vehicles_involved": "long",
+          "num_injuries": "long",
+          "num_witnesses": "long",
+          "police_report_available": "string",
+          "injury_claim": "long",
+          "vehicle_claim": "long",
+          "total_claim_amount": "long",
+          "incident_month": "long",
+          "incident_day": "long",
+          "incident_dow": "long",
+          "incident_hour": "long",
+          "fraud": "long"
+        }
+      },
       "inputs": [
         {
           "name": "default",
-          "node_id": "78a99cac-059b-4404-9f8c-b8c2f4bc7d09",
+          "node_id": "e5d60d4f-6284-4a68-a788-39787909ebc9",
           "output_name": "default"
         }
       ],

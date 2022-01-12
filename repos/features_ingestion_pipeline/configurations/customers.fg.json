@@ -1,92 +1,99 @@
 {
-  "event_time_feature_name": "event_time",
-  "feature_group_name": "customers",
-  "record_identifier_feature_name": "policy_id",
-  "offline_store_config": {
-    "DisableGlueTableCreation": false,
-    "S3StorageConfig": {
-      "S3Uri": "s3_uri"
+  "FeatureGroupName": "customers",
+  "FeatureDefinitions": [
+    {
+      "FeatureName": "policy_id",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "customer_age",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "customer_education",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "months_as_customer",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_deductable",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_annual_premium",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_liability",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "auto_year",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "num_claims_past_year",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "num_insurers_past_5_years",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "customer_gender_male",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "customer_gender_female",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_state_ca",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_state_wa",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_state_az",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_state_or",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_state_nv",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "policy_state_id",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "event_time",
+      "FeatureType": "Fractional"
     }
-  },
-  "online_store_config": {
+  ],
+  "RecordIdentifierFeatureName": "policy_id",
+  "EventTimeFeatureName": "event_time",
+  "OnlineStoreConfig": {
     "EnableOnlineStore": true
   },
-  "column_schemas": [
-    {
-      "name": "policy_id",
-      "type": "long"
+  "OfflineStoreConfig": {
+    "S3StorageConfig": {
+      "S3Uri": "s3://sagemaker-ap-southeast-1-570358149193/mlops-demo/fs/"
     },
+    "DisableGlueTableCreation": false
+  },
+  "Description": "Customers Feature Group",
+  "Tags": [
     {
-      "name": "customer_age",
-      "type": "long"
-    },
-    {
-      "name": "customer_education",
-      "type": "long"
-    },
-    {
-      "name": "months_as_customer",
-      "type": "long"
-    },
-    {
-      "name": "policy_deductable",
-      "type": "long"
-    },
-    {
-      "name": "policy_annual_premium",
-      "type": "long"
-    },
-    {
-      "name": "policy_liability",
-      "type": "long"
-    },
-    {
-      "name": "auto_year",
-      "type": "long"
-    },
-    {
-      "name": "num_claims_past_year",
-      "type": "long"
-    },
-    {
-      "name": "num_insurers_past_5_years",
-      "type": "long"
-    },
-    {
-      "name": "customer_gender_male",
-      "type": "long"
-    },
-    {
-      "name": "customer_gender_female",
-      "type": "long"
-    },
-    {
-      "name": "policy_state_ca",
-      "type": "long"
-    },
-    {
-      "name": "policy_state_wa",
-      "type": "long"
-    },
-    {
-      "name": "policy_state_az",
-      "type": "long"
-    },
-    {
-      "name": "policy_state_or",
-      "type": "long"
-    },
-    {
-      "name": "policy_state_nv",
-      "type": "long"
-    },
-    {
-      "name": "policy_state_id",
-      "type": "long"
-    },
-    {
-      "name": "event_time",
-      "type": "float"
+      "Key": "dev",
+      "Value": "true"
     }
   ]
 }
