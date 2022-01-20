@@ -1,6 +1,8 @@
 from typing import Dict
 
+import aws_cdk as cdk
 from aws_cdk import aws_codebuild as codebuild
+# from aws_cdk import aws_codecommit as codecommit
 from aws_cdk import aws_codepipeline as codepipeline
 from aws_cdk import aws_codepipeline_actions as codepipeline_actions
 from aws_cdk import aws_events as events
@@ -9,15 +11,15 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_ssm as ssm
-from aws_cdk import core as cdk
+from constructs import Construct
 
 from infra.utils import Repository
 
 
-class cicd_construct(cdk.Construct):
+class cicd_construct(Construct):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         seed_bucket_name: str,
         seed_object_key: str,
@@ -216,8 +218,8 @@ class cicd_construct(cdk.Construct):
             #    f"codecommit/repositories/{repo.repository_name}/"
             #    f"commit/{source_action.variables.commit_id}",
             external_entity_link=f"https://{cdk.Aws.REGION}.console.aws.amazon.com/codesuite/codebuild/"
-                f"{cdk.Aws.ACCOUNT_ID}/projects/{build_project.project_name}/"
-                f"build/{build_action.variable('CODEBUILD_BUILD_ID').replace(':', '%3A')}",
+            f"{cdk.Aws.ACCOUNT_ID}/projects/{build_project.project_name}/"
+            f"build/{build_action.variable('CODEBUILD_BUILD_ID').replace(':', '%3A')}",
             action_name="ManualApproval",
             notification_topic=sns_topic,
             role=code_pipeline_role,
@@ -234,7 +236,7 @@ class cicd_construct(cdk.Construct):
             parameter_name=f"/sagemaker-{project_name}/{construct_id}/AutoApprovalFlag",
             simple_name=False,
             string_value="1",
-            allowed_pattern="[0,1]"
+            allowed_pattern="[0,1]",
         )
 
         pipeline.add_stage(

@@ -1,8 +1,8 @@
 {
-    "code_file_path": "pipelines/feature_ingestion_pipeline.py",
-    "pipeline_name": "claims-preprocessing",
-    "pipeline_configuration": {
-        "flow_file_path": "configurations/claims.flow",
-        "feature_group_name": "claims"
-    }
+  "pipeline_name": "claims-preprocessing",
+  "code_file_path": "pipelines/feature_ingestion_pipeline.py",
+  "pipeline_configuration": {
+    "flow_file_path": "pipelines/claims.flow",
+    "feature_group_name": "claims"
+  }
 }

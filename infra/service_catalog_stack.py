@@ -1,8 +1,9 @@
 from pathlib import Path
 
+from aws_cdk import ArnFormat, Aws, CfnParameter, Stack, Tags
 from aws_cdk import aws_iam as iam
-from aws_cdk import aws_servicecatalog as servicecatalog
-from aws_cdk import core as cdk
+from aws_cdk import aws_servicecatalog_alpha as servicecatalog
+from constructs import Construct
 
 from infra.mlops_featurestore_construct import MlopsFeaturestoreStack
 from infra.utils import (
@@ -12,20 +13,35 @@ from infra.utils import (
     snake2pascal,
 )
 
-sm_studio_user_role_arn = get_default_sagemaker_role()
 
-
-class ServiceCatalogStack(cdk.Stack):
+class ServiceCatalogStack(Stack):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        products_launch_role_arn = self.node.try_get_context("MlopsDemo:LaunchRole")
+        if products_launch_role_arn is None:
+            products_launch_role_arn = self.format_arn(
+                region="",
+                service="iam",
+                resource="role",
+                resource_name="service-role/AmazonSageMakerServiceCatalogProductsLaunchRole",
+            )
+        products_use_role_arn = self.node.try_get_context("MlopsDemo:UseRole")
+        if products_use_role_arn is None:
+            products_use_role_arn = self.format_arn(
+                region="",
+                service="iam",
+                resource="role",
+                resource_name="service-role/AmazonSageMakerServiceCatalogProductsUseRole",
+            )
+
         # Define CloudFormation Parameters
-        portfolio_name = cdk.CfnParameter(
+        portfolio_name = CfnParameter(
             self,
             "PortfolioName",
             type="String",
@@ -33,7 +49,7 @@ class ServiceCatalogStack(cdk.Stack):
             default="SageMaker Organization Templates",
             min_length=1,
         )
-        portfolio_owner = cdk.CfnParameter(
+        portfolio_owner = CfnParameter(
             self,
             "PortfolioOwner",
             type="String",
@@ -42,7 +58,7 @@ class ServiceCatalogStack(cdk.Stack):
             min_length=1,
             max_length=50,
         )
-        product_version = cdk.CfnParameter(
+        product_version = CfnParameter(
             self,
             "ProductVersion",
             type="String",
@@ -54,42 +70,38 @@ class ServiceCatalogStack(cdk.Stack):
         products_launch_role = iam.Role.from_role_arn(
             self,
             "LaunchRole",
-            role_arn=f"arn:{self.partition}:iam::{self.account}:role/"
-            "service-role/AmazonSageMakerServiceCatalogProductsLaunchRole",
+            products_launch_role_arn,
         )
 
         products_use_role = iam.Role.from_role_arn(
             self,
             "ProductsUseRole",
-            f"arn:{self.partition}:iam::{self.account}:role/"
-            "service-role/AmazonSageMakerServiceCatalogProductsUseRole",
-        )
-
-        sm_studio_user_role = iam.Role.from_role_arn(
-            self,
-            "SmExecutionRole",
-            sm_studio_user_role_arn,
+            products_use_role_arn,
         )
 
         # Create assets for the seed code of the repositories
         code_assets = {
             f"{snake2pascal(k.name)}": code_asset_upload(
-                self, dir_path=k, read_role=products_launch_role
+                self,
+                dir_path=k,
+                read_role=products_launch_role,
             )
             for k in Path("repos").glob("*")
             if k.is_dir()
         }
 
         demo_asset = code_asset_upload(
-            self, dir_path=Path("demo-workspace"), read_role=products_launch_role
+            self,
+            dir_path=Path("demo-workspace"),
+            read_role=products_launch_role,
         )
 
         product_template = generate_template(
             MlopsFeaturestoreStack,
             "MLOpsCfnStack",
-            sm_studio_user_role=sm_studio_user_role,
             code_assets=code_assets,
             demo_asset=demo_asset,
+            sm_studio_user_role_arn=self.node.try_get_context(key="demouserrole")
         )
 
         portfolio = servicecatalog.Portfolio(
@@ -113,9 +125,12 @@ class ServiceCatalogStack(cdk.Stack):
                     product_version_name=product_version.value_as_string,
                 )
             ],
-            description="Amazon SageMaker Project for a build and deployment pipeline",
+            description="Amazon SageMaker MLOps demo project with "
+            "Feature Ingestion, "
+            "Model Build, "
+            "and Deployment pipelines",
         )
-        cdk.Tags.of(product).add(key="sagemaker:studio-visibility", value="true")
+        Tags.of(product).add(key="sagemaker:studio-visibility", value="true")
 
         portfolio.add_product(product)
         portfolio.give_access_to_role(
@@ -125,7 +140,7 @@ class ServiceCatalogStack(cdk.Stack):
         )
         portfolio.set_launch_role(product, products_launch_role)
 
-        launch_role_policies(products_launch_role)
+        launch_role_policies(products_launch_role, self)
         products_launch_role.add_to_principal_policy(
             iam.PolicyStatement(
                 actions=[
@@ -138,7 +153,7 @@ class ServiceCatalogStack(cdk.Stack):
         )
 
 
-def launch_role_policies(target_role: iam.Role):
+def launch_role_policies(target_role: iam.Role, stack: Stack):
     target_role.add_to_principal_policy(
         iam.PolicyStatement(
             actions=[
@@ -149,22 +164,39 @@ def launch_role_policies(target_role: iam.Role):
                 "SNS:TagResource",
                 "SNS:UnTagResource",
                 "SNS:Subscribe",
+                "SNS:Unsubscribe",
             ],
             resources=[
-                f"arn:aws:sns:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:sagemaker-*"
+                stack.format_arn(
+                    service="sns",
+                    resource="sagemaker-*",
+                )
             ],
         )
     )
     target_role.add_to_principal_policy(
         iam.PolicyStatement(
             actions=["codebuild:BatchGetProjects"],
-            resources=["arn:aws:codebuild:*:*:project/sagemaker*"],
+            resources=[
+                stack.format_arn(
+                    service="codebuild",
+                    resource="project",
+                    resource_name="sagemaker*",
+                ),
+            ],
         )
     )
     target_role.add_to_principal_policy(
         iam.PolicyStatement(
             actions=["s3:*"],
-            resources=["arn:aws:s3:::cdktoolkit-stagingbucket-*"],
+            resources=[
+                stack.format_arn(
+                    service="s3",
+                    region="",
+                    account="",
+                    resource="cdktoolkit-stagingbucket-*",
+                ),
+            ],
         )
     )
 
@@ -172,7 +204,11 @@ def launch_role_policies(target_role: iam.Role):
         iam.PolicyStatement(
             actions=["ssm:GetParameter"],
             resources=[
-                f"arn:aws:ssm:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:parameter/cdk-bootstrap/*"
+                stack.format_arn(
+                    service="ssm",
+                    resource="parameter",
+                    resource_name="cdk-bootstrap/*",
+                ),
             ],
         )
     )
@@ -187,9 +223,16 @@ def launch_role_policies(target_role: iam.Role):
                 "ssm:LabelParameterVersion",
                 "ssm:ListTagsForResource",
                 "ssm:RemoveTagsFromResource",
+                "ssm:DeleteParameter",
+                "ssm:DeleteParameters",
             ],
             resources=[
-                f"arn:aws:ssm:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:parameter/sagemaker*"
+                f"arn:aws:ssm:{Aws.REGION}:{Aws.ACCOUNT_ID}:parameter/sagemaker*",
+                stack.format_arn(
+                    service="ssm",
+                    resource="parameter",
+                    resource_name="sagemaker*",
+                ),
             ],
         )
     )
@@ -198,7 +241,13 @@ def launch_role_policies(target_role: iam.Role):
         iam.PolicyStatement(
             actions=["lambda:GetLayerVersion"],
             resources=[
-                f"arn:aws:lambda:{cdk.Aws.REGION}:017000801446:layer:AWSLambdaPowertoolsPython:3"
+                stack.format_arn(
+                    service="lambda",
+                    account="017000801446",
+                    resource="layer",
+                    resource_name="AWSLambdaPowertoolsPython:4",
+                    arn_format=ArnFormat.COLON_RESOURCE_NAME,
+                ),
             ],
         )
     )

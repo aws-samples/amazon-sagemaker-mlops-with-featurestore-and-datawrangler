@@ -3,13 +3,15 @@ import os
 from pathlib import Path
 from typing import List, Union
 
+import aws_cdk as cdk
 from aws_cdk import aws_codepipeline as codepipeline
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as events_targets
 from aws_cdk import aws_iam as iam
+from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_sagemaker as sagemaker
 from aws_cdk import aws_ssm as ssm
-from aws_cdk import core as cdk
+from constructs import Construct
 
 from infra.sm_pipeline_utils import generate_pipeline_definition, get_pipeline_props
 
@@ -18,8 +20,8 @@ pipeline_construct_id = os.getenv("CODEPIPELINE_CONSTRUCT_ID")
 project_name = os.getenv("SAGEMAKER_PROJECT_NAME")
 project_id = os.getenv("SAGEMAKER_PROJECT_ID")
 sagemaker_execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
-sm_studio_user_role_arn = os.getenv("SAGEMAKER_STUDIO_USER_ROLE_ARN")
 events_role_arn = os.getenv("LAMBDA_ROLE_ARN")
+lambda_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 
 logger = logging.getLogger()
 
@@ -32,7 +34,7 @@ tags = [
 class BuildModelStack(cdk.Stack):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         configuration_path: Union[str, Path],
         **kwargs,
@@ -40,7 +42,19 @@ class BuildModelStack(cdk.Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         eventbridge_role = iam.Role.from_role_arn(
-            self, "EventBridgeRole", role_arn=events_role_arn
+            self,
+            "EventBridgeRole",
+            role_arn=events_role_arn,
+        )
+        lambda_role = iam.Role.from_role_arn(
+            self,
+            "LambdaRole",
+            role_arn=lambda_role_arn,
+        )
+        sagemaker_execution_role = iam.Role.from_role_arn(
+            self,
+            "SageMakerExecutionRole",
+            role_arn=sagemaker_execution_role_arn,
         )
 
         if not isinstance(configuration_path, Path):
@@ -51,6 +65,25 @@ class BuildModelStack(cdk.Stack):
             pipeline_props = get_pipeline_props(k)
 
             pipeline_name = f"{project_name}-{pipeline_props['pipeline_name']}"
+
+            for lf in pipeline_props["lambdas"]:
+                fn = lambda_.Function(
+                    self,
+                    lf["function_name"],
+                    code=lambda_.Code.from_asset(
+                        path=Path(lf["script"]).parent.as_posix()
+                    ),
+                    handler=lf["handler"],
+                    runtime=lambda_.Runtime(name=lf["runtime"]),
+                    memory_size=lf["memory_size"],
+                    timeout=cdk.Duration.seconds(lf["timeout"]),
+                    role=lambda_role,
+                )
+                pipeline_props["pipeline_configuration"][
+                    lf["arn_handler"]
+                ] = fn.function_arn
+                fn.grant_invoke(sagemaker_execution_role)
+
             pipeline_conf = pipeline_props["pipeline_configuration"]
             try:
                 logger.info(f"Generating pipeline definition for {pipeline_name}")

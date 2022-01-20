@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Dict
 
 from sagemaker.feature_store.feature_definition import (
     FeatureDefinition,
@@ -21,6 +21,19 @@ column_to_feature_type_mapping = {
 }
 
 
+feature_type_map = {"float": "Fractional", "long": "Integral", "string": "String"}
+
+
+def format_feature_def(feature_def: Dict):
+    retval = {"FeatureName": feature_def["name"]}
+    retval["FeatureType"] = feature_type_map[feature_def["type"]]
+    return retval
+
+
+def format_feature_defs(feature_definitions: List[Dict]):
+    return [format_feature_def(k) for k in feature_definitions]
+
+
 def prepare_features_definitions(
     column_schemas: dict,
 ):
@@ -35,22 +48,22 @@ def prepare_features_definitions(
         for column_schema in column_schemas
     ]
 
-#     return [
-#             {key_map[k]: o for k, o in j.items()}
-#         for j in feature_definitions
-#     ]
+    #     return [
+    #             {key_map[k]: o for k, o in j.items()}
+    #         for j in feature_definitions
+    #     ]
     return feature_definitions
 
 
 def get_fg_conf(file_path: Union[str, Path], s3_uri: str = None) -> dict:
     with open(file_path, "r") as f:
         f_list = json.load(f)
-#     offline_conf = None
-#     if f_list["offline_store_config"]:
-#         offline_conf = dict(
-#             DisableGlueTableCreation=False,
-#             S3StorageConfig={"S3Uri": f"s3://{bucket_name}/"},
-#         )
+    #     offline_conf = None
+    #     if f_list["offline_store_config"]:
+    #         offline_conf = dict(
+    #             DisableGlueTableCreation=False,
+    #             S3StorageConfig={"S3Uri": f"s3://{bucket_name}/"},
+    #         )
 
     return dict(
         feature_group_name=f_list["feature_group_name"],

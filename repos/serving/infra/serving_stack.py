@@ -17,7 +17,6 @@ project_name = os.getenv("SAGEMAKER_PROJECT_NAME")
 project_id = os.getenv("SAGEMAKER_PROJECT_ID")
 codepipeline_arn = os.getenv("CODEPIPELINE_ARN")
 execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
-sm_studio_user_role_arn = os.getenv("SAGEMAKER_STUDIO_USER_ROLE_ARN")
 events_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 glue_role_arn = os.getenv("GLUE_ROLE_ARN")
 api_gateway_role_arn = os.getenv("API_GATEWAY_ROLE_ARN")
@@ -32,19 +31,6 @@ class ServingStack(cdk.Stack):
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
-
-        sm_studio_user_role = iam.Role.from_role_arn(
-            self, "SageMakerStudioUserRole", role_arn=sm_studio_user_role_arn
-        )
-        api_gateway_role = iam.Role.from_role_arn(
-            self, "ApiGwRole", role_arn=api_gateway_role_arn
-        )
-        glue_role = iam.Role.from_role_arn(
-            self, "GlueRole", role_arn=glue_role_arn
-        )
-        lambda_role = iam.Role.from_role_arn(
-            self, "LambdaRole", role_arn=lambda_role_arn
-        )
 
 
         # Create SageMaker Pipeline

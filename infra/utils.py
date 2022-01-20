@@ -1,11 +1,13 @@
+import re
 import shutil
 from pathlib import Path
 
+import aws_cdk as cdk
 import boto3
 from aws_cdk import aws_codecommit as codecommit
-from aws_cdk import core as cdk
 from aws_cdk.aws_iam import Role
 from aws_cdk.aws_s3_assets import Asset
+from constructs import Construct
 
 
 def generate_template(stack: cdk.Stack, stack_name: str, **kwargs) -> str:
@@ -28,7 +30,7 @@ def generate_template(stack: cdk.Stack, stack_name: str, **kwargs) -> str:
 class Repository(object):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         repository_name: str,
         code_bucket: str,
@@ -74,7 +76,7 @@ def code_asset_upload(stack: cdk.Stack, dir_path: Path, read_role: Role):
         path=archive,
     )
     # asset = Asset(
-    #     self, f"{dir_path.name}CodeSeed", path=dir_path.as_posix()
+    #     stack, f"{dir_path.name}CodeSeed", path=dir_path.as_posix()
     # )
     asset.grant_read(read_role)
     return asset
@@ -92,3 +94,8 @@ def get_default_sagemaker_role():
 
 def snake2pascal(test_str: str):
     return test_str.replace("_", " ").title().replace(" ", "")
+
+
+def pascal2snake(name):
+    name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()

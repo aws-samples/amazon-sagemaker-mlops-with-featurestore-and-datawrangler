@@ -15,7 +15,7 @@
           "description": null,
           "s3ExecutionContext": {
             "__typename": "S3ExecutionContext",
-            "s3Uri": "s3://sagemaker-ap-southeast-1-570358149193/fraud-detect-demo/data/raw/customers.csv",
+            "s3Uri": "",
             "s3ContentType": "csv",
             "s3HasHeader": true
           }
@@ -26,8 +26,8 @@
         {
           "name": "default",
           "sampling": {
-            "sampling_method": "sample_by_ratio",
-            "sample_ratio": 1
+            "sampling_method": "sample_by_limit",
+            "limit_rows": 50000
           }
         }
       ]

@@ -1,140 +1,147 @@
 {
-  "event_time_feature_name": "event_time",
-  "feature_group_name": "claims",
-  "record_identifier_feature_name": "policy_id",
-  "offline_store_config": {
-    "DisableGlueTableCreation": false,
-    "S3StorageConfig": {
-      "S3Uri": "s3_uri"
+  "FeatureGroupName": "claims",
+  "FeatureDefinitions": [
+    {
+      "FeatureName": "policy_id",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "incident_severity",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "num_vehicles_involved",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "num_injuries",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "num_witnesses",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "police_report_available",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "injury_claim",
+      "FeatureType": "Fractional"
+    },
+    {
+      "FeatureName": "vehicle_claim",
+      "FeatureType": "Fractional"
+    },
+    {
+      "FeatureName": "total_claim_amount",
+      "FeatureType": "Fractional"
+    },
+    {
+      "FeatureName": "incident_month",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "incident_day",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "incident_dow",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "incident_hour",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "fraud",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "driver_relationship_self",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "driver_relationship_na",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "driver_relationship_spouse",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "driver_relationship_child",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "driver_relationship_other",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "incident_type_collision",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "incident_type_breakin",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "incident_type_theft",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "collision_type_front",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "collision_type_rear",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "collision_type_side",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "collision_type_na",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "authorities_contacted_police",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "authorities_contacted_none",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "authorities_contacted_ambulance",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "authorities_contacted_fire",
+      "FeatureType": "Integral"
+    },
+    {
+      "FeatureName": "event_time",
+      "FeatureType": "Fractional"
     }
-  },
-  "online_store_config": {
+  ],
+  "RecordIdentifierFeatureName": "policy_id",
+  "EventTimeFeatureName": "event_time",
+  "OnlineStoreConfig": {
     "EnableOnlineStore": true
   },
-  "column_schemas": [
-    {
-      "name": "policy_id",
-      "type": "long"
+  "OfflineStoreConfig": {
+    "S3StorageConfig": {
+      "S3Uri": "s3://sagemaker-ap-southeast-1-570358149193/mlops-demo/fs/"
     },
+    "DisableGlueTableCreation": false
+  },
+  "Description": "Claim feature group",
+  "Tags": [
     {
-      "name": "incident_severity",
-      "type": "long"
-    },
-    {
-      "name": "num_vehicles_involved",
-      "type": "long"
-    },
-    {
-      "name": "num_injuries",
-      "type": "long"
-    },
-    {
-      "name": "num_witnesses",
-      "type": "long"
-    },
-    {
-      "name": "police_report_available",
-      "type": "long"
-    },
-    {
-      "name": "injury_claim",
-      "type": "float"
-    },
-    {
-      "name": "vehicle_claim",
-      "type": "float"
-    },
-    {
-      "name": "total_claim_amount",
-      "type": "float"
-    },
-    {
-      "name": "incident_month",
-      "type": "long"
-    },
-    {
-      "name": "incident_day",
-      "type": "long"
-    },
-    {
-      "name": "incident_dow",
-      "type": "long"
-    },
-    {
-      "name": "incident_hour",
-      "type": "long"
-    },
-    {
-      "name": "fraud",
-      "type": "long"
-    },
-    {
-      "name": "driver_relationship_self",
-      "type": "long"
-    },
-    {
-      "name": "driver_relationship_na",
-      "type": "long"
-    },
-    {
-      "name": "driver_relationship_spouse",
-      "type": "long"
-    },
-    {
-      "name": "driver_relationship_child",
-      "type": "long"
-    },
-    {
-      "name": "driver_relationship_other",
-      "type": "long"
-    },
-    {
-      "name": "incident_type_collision",
-      "type": "long"
-    },
-    {
-      "name": "incident_type_breakin",
-      "type": "long"
-    },
-    {
-      "name": "incident_type_theft",
-      "type": "long"
-    },
-    {
-      "name": "collision_type_front",
-      "type": "long"
-    },
-    {
-      "name": "collision_type_rear",
-      "type": "long"
-    },
-    {
-      "name": "collision_type_side",
-      "type": "long"
-    },
-    {
-      "name": "collision_type_na",
-      "type": "long"
-    },
-    {
-      "name": "authorities_contacted_police",
-      "type": "long"
-    },
-    {
-      "name": "authorities_contacted_none",
-      "type": "long"
-    },
-    {
-      "name": "authorities_contacted_ambulance",
-      "type": "long"
-    },
-    {
-      "name": "authorities_contacted_fire",
-      "type": "long"
-    },
-    {
-      "name": "event_time",
-      "type": "float"
+      "Key": "dev",
+      "Value": "true"
     }
   ]
 }

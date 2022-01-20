@@ -1,12 +1,14 @@
 from uuid import uuid4
 
+import aws_cdk as cdk
+from aws_cdk import Aws, CfnParameter, Duration, Stack, Tags
 from aws_cdk import aws_iam as iam
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_lambda_event_sources as lambda_event_sources
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_assets as s3_assets
 from aws_cdk import aws_sns as sns
-from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_lambda_event_sources as lambda_event_sources
-from aws_cdk import core as cdk
+from constructs import Construct
 
 from infra.cicd_construct import cicd_construct
 from infra.utils import Repository
@@ -23,14 +25,14 @@ roles_names_list = [
 ]
 
 
-class MlopsFeaturestoreStack(cdk.Stack):
+class MlopsFeaturestoreStack(Stack):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
-        sm_studio_user_role: iam.Role,
         code_assets: dict,
         demo_asset: dict,
+        sm_studio_user_role_arn: str = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -44,7 +46,7 @@ class MlopsFeaturestoreStack(cdk.Stack):
             max_length=16,
             default="MLOpsDemo",
         )
-        project_id = cdk.CfnParameter(
+        project_id = CfnParameter(
             self,
             "SageMakerProjectId",
             type="String",
@@ -54,8 +56,23 @@ class MlopsFeaturestoreStack(cdk.Stack):
             default="mlopsdemo-id",
         )
 
+        sm_studio_user_role_arn = cdk.CfnParameter(
+            self,
+            "DemoSMSUserRole",
+            type="String",
+            description="Amazon SageMaker User Execution Role to run the Demo walkthrough.",
+            default=sm_studio_user_role_arn,
+            allowed_pattern="^arn:aws[a-z\-]*:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+$",
+        )
+
         project_name = project_name.value_as_string
         project_id = project_id.value_as_string
+
+        sm_studio_user_role = iam.Role.from_role_arn(
+            self,
+            "SMSUserRole",
+            role_arn=sm_studio_user_role_arn.value_as_string,
+        )
 
         MlopsFeaturestoreConstruct(
             scope=self,
@@ -68,10 +85,10 @@ class MlopsFeaturestoreStack(cdk.Stack):
         )
 
 
-class MlopsFeaturestoreConstruct(cdk.Construct):
+class MlopsFeaturestoreConstruct(Construct):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         sm_studio_user_role: iam.Role,
         project_name: str = "MLOpsDemo",
@@ -83,13 +100,13 @@ class MlopsFeaturestoreConstruct(cdk.Construct):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        cdk.Tags.of(self).add(key="sagemaker:project-id", value=project_id)
-        cdk.Tags.of(self).add(key="sagemaker:project-name", value=project_name)
+        Tags.of(self).add(key="sagemaker:project-id", value=project_id)
+        Tags.of(self).add(key="sagemaker:project-name", value=project_name)
 
         products_use_role = iam.Role.from_role_arn(
             self,
             "ProductsUseRole",
-            f"arn:{cdk.Aws.PARTITION}:iam::{cdk.Aws.ACCOUNT_ID}:role/"
+            f"arn:{Aws.PARTITION}:iam::{Aws.ACCOUNT_ID}:role/"
             "service-role/AmazonSageMakerServiceCatalogProductsUseRole",
         )
         policy_result = update_execution_policies(
@@ -135,7 +152,7 @@ class MlopsFeaturestoreConstruct(cdk.Construct):
             role=products_use_role,
             handler="index.lambda_handler",
             runtime=lambda_.Runtime.PYTHON_3_8,
-            timeout=cdk.Duration.seconds(3),
+            timeout=Duration.seconds(3),
             memory_size=128,
             environment={
                 "PROJECT_NAME": project_name,
@@ -145,8 +162,8 @@ class MlopsFeaturestoreConstruct(cdk.Construct):
                 lambda_.LayerVersion.from_layer_version_arn(
                     self,
                     "LambdaPowerToolsLayer",
-                    layer_version_arn=f"arn:aws:lambda:{cdk.Aws.REGION}:017000801446:layer:AWSLambdaPowertoolsPython:3",
-                )
+                    layer_version_arn=f"arn:aws:lambda:{cdk.Aws.REGION}:017000801446:layer:AWSLambdaPowertoolsPython:4",
+                ),
             ],
         )
         lambda_approval.add_event_source(
@@ -187,7 +204,9 @@ class MlopsFeaturestoreConstruct(cdk.Construct):
 
 
 def update_execution_policies(
-    target_role: iam.Role, project_name: str, project_id: str
+    target_role: iam.Role,
+    project_name: str,
+    project_id: str,
 ):
     """Add necessary policies to the target role
 

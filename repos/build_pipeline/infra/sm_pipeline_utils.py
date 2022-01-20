@@ -88,7 +88,7 @@ def generate_pipeline_definition(
     logger.info(
         f"Creating SageMaker Pipeline definition. Artifacts to be uploaded in {default_bucket}"
     )
-    pipeline = module.create_pipeline(
+    pipeline = module.get_pipeline(
         role, pipeline_name, sagemaker_session=sm_session, **pipeline_conf
     )
     logger.info("Uploading generated defintion")
