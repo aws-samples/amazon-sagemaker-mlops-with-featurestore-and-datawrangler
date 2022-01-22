@@ -61,7 +61,7 @@ class MlopsFeaturestoreStack(Stack):
             self,
             "DemoSMSUserRole",
             type="String",
-            description="Amazon SageMaker User Execution Role to run the Demo walkthrough.",
+            description="Amazon SageMaker User Execution Role to run the Demo walk-through.",
             default=sm_studio_user_role_arn,
             allowed_pattern="^arn:aws[a-z\-]*:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+$",
         )
@@ -176,12 +176,18 @@ class MlopsFeaturestoreConstruct(Construct):
             )
         )
 
-        seed_bucket_name = ssm.StringParameter.from_string_parameter_attributes(
+        # seed_bucket_name = ssm.StringParameter.from_string_parameter_attributes(
+        #     self,
+        #     "SeedBucketName",
+        #     parameter_name=ssm_parameter_seed_bucket_name,
+        #     simple_name=False,
+        # ).string_value
+
+        seed_bucket_name = ssm.StringParameter.value_for_string_parameter(
             self,
-            "SeedBucketName",
             parameter_name=ssm_parameter_seed_bucket_name,
-            simple_name=False,
-        ).string_value
+        )
+
         cicd_dict = {
             name: cicd_construct(
                 self,
@@ -201,7 +207,7 @@ class MlopsFeaturestoreConstruct(Construct):
         if demo_asset is not None:
             Repository(
                 self,
-                f"sagemaker{construct_id}Repository",
+                f"Sagemaker{construct_id}Repository",
                 repository_name=f"sagemaker-{project_name}-Demo",
                 code_bucket=seed_bucket_name,
                 code_key=demo_asset["s3_object_key"],

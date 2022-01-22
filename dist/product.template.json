@@ -17,9 +17,9 @@
     "DemoSMSUserRole": {
       "Type": "String",
       "AllowedPattern": "^arn:aws[a-z\\-]*:iam::\\d{12}:role/?[a-zA-Z_0-9+=,.@\\-_/]+$",
-      "Description": "Amazon SageMaker User Execution Role to run the Demo walkthrough."
+      "Description": "Amazon SageMaker User Execution Role to run the Demo walk-through."
     },
-    "MLOpsProjectSeedBucketNameParameterBEE62386": {
+    "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter": {
       "Type": "AWS::SSM::Parameter::Value<String>",
       "Default": "/MLOpsDemoSCProjectStack/SeedBucketName"
     }
@@ -453,7 +453,7 @@
               {
                 "Ref": "SageMakerProjectId"
               },
-              "-d72e426"
+              "-29d30e6"
             ]
           ]
         },
@@ -687,7 +687,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "MLOpsProjectsagemakerServingRepositoryL17490ED95",
+                      "MLOpsProjectSagemakerServingRepositoryL1E4837D54",
                       "Name"
                     ]
                   }
@@ -844,7 +844,7 @@
         "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/Serving/AutoApprovalFlag/Resource"
       }
     },
-    "MLOpsProjectsagemakerServingRepositoryL17490ED95": {
+    "MLOpsProjectSagemakerServingRepositoryL1E4837D54": {
       "Type": "AWS::CodeCommit::Repository",
       "Properties": {
         "RepositoryName": {
@@ -863,7 +863,7 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+              "Ref": "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter"
             },
             "Key": "serving.zip"
           }
@@ -886,7 +886,7 @@
       "UpdateReplacePolicy": "Delete",
       "DeletionPolicy": "Delete",
       "Metadata": {
-        "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/sagemakerServingRepository-L1"
+        "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/SagemakerServingRepository-L1"
       }
     },
     "MLOpsProjectServingCodePipeline1C5199EB": {
@@ -921,7 +921,7 @@
                 "Configuration": {
                   "RepositoryName": {
                     "Fn::GetAtt": [
-                      "MLOpsProjectsagemakerServingRepositoryL17490ED95",
+                      "MLOpsProjectSagemakerServingRepositoryL1E4837D54",
                       "Name"
                     ]
                   },
@@ -1593,7 +1593,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "MLOpsProjectsagemakerFeaturesIngestionPipelineRepositoryL1D4DB9DEE",
+                      "MLOpsProjectSagemakerFeaturesIngestionPipelineRepositoryL18D031E06",
                       "Name"
                     ]
                   }
@@ -1750,7 +1750,7 @@
         "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/FeaturesIngestionPipeline/AutoApprovalFlag/Resource"
       }
     },
-    "MLOpsProjectsagemakerFeaturesIngestionPipelineRepositoryL1D4DB9DEE": {
+    "MLOpsProjectSagemakerFeaturesIngestionPipelineRepositoryL18D031E06": {
       "Type": "AWS::CodeCommit::Repository",
       "Properties": {
         "RepositoryName": {
@@ -1769,7 +1769,7 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+              "Ref": "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter"
             },
             "Key": "features_ingestion_pipeline.zip"
           }
@@ -1792,7 +1792,7 @@
       "UpdateReplacePolicy": "Delete",
       "DeletionPolicy": "Delete",
       "Metadata": {
-        "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/sagemakerFeaturesIngestionPipelineRepository-L1"
+        "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/SagemakerFeaturesIngestionPipelineRepository-L1"
       }
     },
     "MLOpsProjectFeaturesIngestionPipelineCodePipeline08A12E3F": {
@@ -1827,7 +1827,7 @@
                 "Configuration": {
                   "RepositoryName": {
                     "Fn::GetAtt": [
-                      "MLOpsProjectsagemakerFeaturesIngestionPipelineRepositoryL1D4DB9DEE",
+                      "MLOpsProjectSagemakerFeaturesIngestionPipelineRepositoryL18D031E06",
                       "Name"
                     ]
                   },
@@ -2499,7 +2499,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "MLOpsProjectsagemakerBuildPipelineRepositoryL145CAECFE",
+                      "MLOpsProjectSagemakerBuildPipelineRepositoryL1D539DDD7",
                       "Name"
                     ]
                   }
@@ -2656,7 +2656,7 @@
         "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/BuildPipeline/AutoApprovalFlag/Resource"
       }
     },
-    "MLOpsProjectsagemakerBuildPipelineRepositoryL145CAECFE": {
+    "MLOpsProjectSagemakerBuildPipelineRepositoryL1D539DDD7": {
       "Type": "AWS::CodeCommit::Repository",
       "Properties": {
         "RepositoryName": {
@@ -2675,7 +2675,7 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+              "Ref": "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter"
             },
             "Key": "build_pipeline.zip"
           }
@@ -2698,7 +2698,7 @@
       "UpdateReplacePolicy": "Delete",
       "DeletionPolicy": "Delete",
       "Metadata": {
-        "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/sagemakerBuildPipelineRepository-L1"
+        "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/SagemakerBuildPipelineRepository-L1"
       }
     },
     "MLOpsProjectBuildPipelineCodePipelineCEB3B469": {
@@ -2733,7 +2733,7 @@
                 "Configuration": {
                   "RepositoryName": {
                     "Fn::GetAtt": [
-                      "MLOpsProjectsagemakerBuildPipelineRepositoryL145CAECFE",
+                      "MLOpsProjectSagemakerBuildPipelineRepositoryL1D539DDD7",
                       "Name"
                     ]
                   },
@@ -3365,7 +3365,7 @@
         "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/BuildPipelineDeployProject/Resource"
       }
     },
-    "MLOpsProjectsagemakerMLOpsProjectRepositoryL180A9BC0B": {
+    "MLOpsProjectSagemakerMLOpsProjectRepositoryL16595536D": {
       "Type": "AWS::CodeCommit::Repository",
       "Properties": {
         "RepositoryName": {
@@ -3384,7 +3384,7 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+              "Ref": "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter"
             },
             "Key": "demo-workspace.zip"
           }
@@ -3407,7 +3407,7 @@
       "UpdateReplacePolicy": "Delete",
       "DeletionPolicy": "Delete",
       "Metadata": {
-        "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/sagemakerMLOpsProjectRepository-L1"
+        "aws:cdk:path": "SynthStage/MLOpsCfnStack/MLOpsProject/SagemakerMLOpsProjectRepository-L1"
       }
     }
   }
