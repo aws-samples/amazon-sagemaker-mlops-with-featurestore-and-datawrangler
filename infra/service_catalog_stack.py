@@ -1,8 +1,16 @@
 import shutil
 from pathlib import Path
 
-from aws_cdk import (ArnFormat, Aws, CfnParameter, CustomResource, Duration,
-                     RemovalPolicy, Stack, Tags)
+from aws_cdk import (
+    ArnFormat,
+    Aws,
+    CfnParameter,
+    CustomResource,
+    Duration,
+    RemovalPolicy,
+    Stack,
+    Tags,
+)
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as s3
@@ -73,7 +81,7 @@ class ServiceCatalogStack(Stack):
             type="String",
             description="Studio User Role ARN",
             min_length=1,
-            allowed_pattern="^arn:aws[a-z\\-]*:iam::\\d{12}:role/?[a-zA-Z_0-9+=,.@\\-_/]+$"
+            allowed_pattern="^arn:aws[a-z\\-]*:iam::\\d{12}:role/?[a-zA-Z_0-9+=,.@\\-_/]+$",
         )
 
         products_launch_role = iam.Role.from_role_arn(
@@ -94,7 +102,7 @@ class ServiceCatalogStack(Stack):
             # auto_delete_objects=True,
             removal_policy=RemovalPolicy.DESTROY,
         )
-        parameter_name=f"/{self.stack_name}/SeedBucketName"
+        parameter_name = f"/{self.stack_name}/SeedBucketName"
         seed_bucket_name = ssm.StringParameter(
             self,
             f"SeedBucketName",
@@ -198,10 +206,7 @@ class ServiceCatalogStack(Stack):
             product_versions=[
                 servicecatalog.CloudFormationProductVersion(
                     cloud_formation_template=servicecatalog.CloudFormationTemplate.from_url(
-                        seed_bucket.url_for_object(
-                            # "product.template.json"
-                            cr.get_att_string("template_key")
-                        )
+                        "https://raw.githubusercontent.com/aws-samples/amazon-sagemaker-mlops-with-featurestore-and-datawrangler/artifact-less_deployment/dist/product.template.json"
                     ),
                     product_version_name=product_version.value_as_string,
                 )

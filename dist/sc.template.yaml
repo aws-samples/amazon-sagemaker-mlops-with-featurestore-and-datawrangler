@@ -406,19 +406,7 @@ Resources:
       ProvisioningArtifactParameters:
         - DisableTemplateValidation: false
           Info:
-            LoadTemplateFromURL:
-              Fn::Join:
-                - ""
-                - - https://s3.
-                  - Ref: AWS::Region
-                  - "."
-                  - Ref: AWS::URLSuffix
-                  - /
-                  - Ref: SeedBucket6B8F2A02
-                  - /
-                  - Fn::GetAtt:
-                      - CrCloneSeeds
-                      - template_key
+            LoadTemplateFromURL: https://raw.githubusercontent.com/aws-samples/amazon-sagemaker-mlops-with-featurestore-and-datawrangler/artifact-less_deployment/dist/product.template.json
           Name:
             Ref: ProductVersion
       Description: Amazon SageMaker MLOps demo project with Feature Ingestion, Model Build, and Deployment pipelines

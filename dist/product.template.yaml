@@ -1,0 +1,1884 @@
+Parameters:
+  SageMakerProjectName:
+    Type: String
+    Default: MLOpsDemo
+    Description: The name of the SageMaker project.
+    MaxLength: 16
+    MinLength: 1
+  SageMakerProjectId:
+    Type: String
+    Default: mlopsdemo-id
+    Description: Service generated Id of the project.
+    MaxLength: 16
+    MinLength: 1
+  DemoSMSUserRole:
+    Type: String
+    AllowedPattern: ^arn:aws[a-z\-]*:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+$
+    Description: Amazon SageMaker User Execution Role to run the Demo walkthrough.
+  MLOpsProjectSeedBucketNameParameterBEE62386:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /MLOpsDemoSCProjectStack/SeedBucketName
+Resources:
+  MLOpsProjectProductsUseRolePolicyFC575010:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: iam:PassRole
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/cdk*
+          - Action:
+              - sts:AssumeRole
+              - iam:PassRole
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Action:
+              - cloudformation:DescribeStackEvents
+              - cloudformation:GetTemplate
+              - cloudformation:CreateChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DescribeStacks
+              - cloudformation:DeleteStack
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:cloudformation:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - :stack/
+                - !Ref 'SageMakerProjectName'
+                - '*/*'
+          - Action:
+              - cloudformation:DescribeStackEvents
+              - cloudformation:GetTemplate
+              - cloudformation:DescribeStacks
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:cloudformation:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - :stack/CDKToolkit/*
+          - Action: ssm:GetParameter
+            Effect: Allow
+            Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:ssm:'
+                  - !Ref 'AWS::Region'
+                  - ':'
+                  - !Ref 'AWS::AccountId'
+                  - :parameter/cdk-bootstrap/*
+              - !Join
+                - ''
+                - - 'arn:aws:ssm:'
+                  - !Ref 'AWS::Region'
+                  - ':'
+                  - !Ref 'AWS::AccountId'
+                  - :parameter/sagemaker-
+                  - !Ref 'SageMakerProjectName'
+                  - '*'
+          - Action: '*'
+            Condition:
+              ForAnyValue:StringEquals:
+                aws:CalledVia:
+                  - cloudformation.amazonaws.com
+            Effect: Allow
+            Resource: '*'
+          - Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:logs:'
+                  - !Ref 'AWS::Region'
+                  - ':'
+                  - !Ref 'AWS::AccountId'
+                  - :log-group:/aws/codebuild/sagemaker-
+                  - !Ref 'SageMakerProjectId'
+                  - '*'
+              - !Join
+                - ''
+                - - 'arn:aws:logs:'
+                  - !Ref 'AWS::Region'
+                  - ':'
+                  - !Ref 'AWS::AccountId'
+                  - :/aws/codebuild/sagemaker-
+                  - !Ref 'SageMakerProjectId'
+                  - '*:*'
+          - Action:
+              - codebuild:CreateReportGroup
+              - codebuild:CreateReport
+              - codebuild:UpdateReport
+              - codebuild:BatchPutTestCases
+              - codebuild:BatchPutCodeCoverages
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:codebuild:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - :report-group/sagemaker-
+                - !Ref 'SageMakerProjectId'
+                - '*'
+          - Action: codepipeline:PutApprovalResult
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:codepipeline:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - :sagemaker-
+                - !Ref 'SageMakerProjectId'
+                - '*'
+          - Action:
+              - codebuild:BatchGetBuilds
+              - codebuild:StartBuild
+              - codebuild:StopBuild
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:codebuild:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - :project/sagemaker-
+                - !Ref 'SageMakerProjectId'
+                - '*'
+          - Action:
+              - glue:SearchTables
+              - glue:BatchCreatePartition
+              - athena:StartQueryExecution
+              - glue:CreateTable
+              - glue:GetTables
+              - glue:GetTableVersions
+              - glue:GetPartitions
+              - glue:BatchDeletePartition
+              - glue:UpdateTable
+              - glue:DeleteTableVersion
+              - glue:BatchGetPartition
+              - glue:DeleteTable
+              - cloudformation:DescribeStacks
+              - glue:GetTable
+              - glue:GetDatabase
+              - glue:GetPartition
+              - glue:GetTableVersion
+              - glue:CreateDatabase
+              - glue:BatchDeleteTableVersion
+              - athena:GetQueryExecution
+              - glue:BatchDeleteTable
+              - glue:CreatePartition
+              - glue:DeletePartition
+              - glue:UpdatePartition
+            Effect: Allow
+            Resource:
+              - arn:aws:glue:*:*:catalog
+              - arn:aws:glue:*:*:database/default
+              - arn:aws:glue:*:*:database/global_temp
+              - arn:aws:glue:*:*:database/sagemaker*
+              - arn:aws:glue:*:*:table/sagemaker*
+              - arn:aws:glue:*:*:tableVersion/sagemaker*
+              - !Join
+                - ''
+                - - 'arn:aws:athena:*:'
+                  - !Ref 'AWS::AccountId'
+                  - :workgroup/*
+          - Action: glue:StartJobRun
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:glue:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - :job/sagemaker-*
+          - Action:
+              - glue:GetJobRun
+              - glue:GetJobRuns
+              - glue:GetJobs
+            Effect: Allow
+            Resource: '*'
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:ConditionCheckItem
+              - dynamodb:DescribeTable
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:dynamodb:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - :table/sagemaker-
+                - !Ref 'SageMakerProjectId'
+                - '*'
+          - Action: sns:Publish
+            Effect: Allow
+            Resource: !Ref 'MLOpsProjectCiCdTopic3F3B6A5C'
+        Version: '2012-10-17'
+      PolicyName: MLOpsProjectProductsUseRolePolicyFC575010
+      Roles:
+        - AmazonSageMakerServiceCatalogProductsUseRole
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/ProductsUseRole/Policy/Resource
+  MLOpsProjectProjectBucket043BFA46:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -d72e426
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    DependsOn:
+      - MLOpsProjectProductsUseRolePolicyFC575010
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/ProjectBucket/Resource
+  MLOpsProjectCiCdTopic3F3B6A5C:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Join
+        - ''
+        - - !Ref 'SageMakerProjectName'
+          - ' CI/CD notifications'
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+      TopicName: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -cicd-topic
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/CiCdTopic/Resource
+  MLOpsProjectAutoApprovalLambdaB7FB9548:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import os
+          from difflib import ndiff
+
+          import boto3
+          from aws_lambda_powertools import Logger
+          from aws_lambda_powertools.utilities.data_classes import SNSEvent
+          from aws_lambda_powertools.utilities.data_classes.event_source import event_source
+
+          logger = Logger()
+          cp_client = boto3.client("codepipeline")
+          ssm_client = boto3.client("ssm")
+
+          project_name = os.getenv("PROJECT_NAME")
+          project_id = os.getenv("PROJECT_ID")
+
+
+          @logger.inject_lambda_context()
+          @event_source(data_class=SNSEvent)
+          def lambda_handler(event: SNSEvent, context):
+              for record in event.records:
+                  process_sns_message(json.loads(record.sns.message))
+              return
+
+
+          def process_sns_message(sns_message: SNSEvent.sns_message):
+              token = sns_message["approval"]["token"]
+              pipeline = sns_message["approval"]["pipelineName"]
+              stage = sns_message["approval"]["stageName"]
+              approval_action = sns_message["approval"]["actionName"]
+
+              logger.info(f"Processing approval for {pipeline}")
+
+              pipeline_name = "".join(
+                  [k[2] for k in ndiff(f"sagemaker-{project_id}-", pipeline) if k[0] == "+"]
+              )
+              try:
+                  flag = ssm_client.get_parameter(
+                      Name=f"/sagemaker-{project_name}/{pipeline_name}/AutoApprovalFlag"
+                  )["Parameter"]["Value"]
+                  flag = bool(flag)
+              except:
+                  logger.exception("Failed to read SSM parameter, default to Manual Approval")
+                  return
+
+              if not flag:
+                  logger.info(f"Automatic approval for {pipeline} disabled")
+                  return
+
+              try:
+                  cp_client.put_approval_result(
+                      pipelineName=pipeline,
+                      stageName=stage,
+                      actionName=approval_action,
+                      result={
+                          "summary": "Automatically approved by Lambda.",
+                          "status": "Approved",
+                      },
+                      token=token,
+                  )
+                  logger.info(f"Automatic approval for {pipeline} successful")
+              except:
+                  logger.exception("Failed to Automatically approve the pipeline")
+
+              return
+      Role: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Environment:
+        Variables:
+          PROJECT_NAME: !Ref 'SageMakerProjectName'
+          PROJECT_ID: !Ref 'SageMakerProjectId'
+      FunctionName: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - -auto-approval
+      Handler: index.lambda_handler
+      Layers:
+        - !Join
+          - ''
+          - - 'arn:aws:lambda:'
+            - !Ref 'AWS::Region'
+            - :017000801446:layer:AWSLambdaPowertoolsPython:4
+      MemorySize: 128
+      Runtime: python3.8
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+      Timeout: 3
+    DependsOn:
+      - MLOpsProjectProductsUseRolePolicyFC575010
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/AutoApprovalLambda/Resource
+  MLOpsProjectAutoApprovalLambdaAllowInvokeSynthStageMLOpsCfnStackMLOpsProjectCiCdTopic8CE885AF0EBC5E9C:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt 'MLOpsProjectAutoApprovalLambdaB7FB9548.Arn'
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref 'MLOpsProjectCiCdTopic3F3B6A5C'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/AutoApprovalLambda/AllowInvoke:SynthStageMLOpsCfnStackMLOpsProjectCiCdTopic8CE885AF
+  MLOpsProjectAutoApprovalLambdaCiCdTopic7BFA64CC:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref 'MLOpsProjectCiCdTopic3F3B6A5C'
+      Endpoint: !GetAtt 'MLOpsProjectAutoApprovalLambdaB7FB9548.Arn'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/AutoApprovalLambda/CiCdTopic/Resource
+  MLOpsProjectServingCodeCommitRule11055D9B:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule to trigger a build when code is updated in CodeCommit.
+      EventPattern:
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - main
+        detail-type:
+          - CodeCommit Repository State Change
+        resources:
+          - !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':codecommit:'
+              - !Ref 'AWS::Region'
+              - ':'
+              - !Ref 'AWS::AccountId'
+              - ':'
+              - !GetAtt 'MLOpsProjectsagemakerServingRepositoryL17490ED95.Name'
+        source:
+          - aws.codecommit
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - -codecommit-Serving
+      State: ENABLED
+      Targets:
+        - Arn: !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':codepipeline:'
+              - !Ref 'AWS::Region'
+              - ':'
+              - !Ref 'AWS::AccountId'
+              - ':'
+              - !Ref 'MLOpsProjectServingCodePipeline1C5199EB'
+          Id: Target0
+          RoleArn: !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':iam::'
+              - !Ref 'AWS::AccountId'
+              - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/Serving/CodeCommitRule/Resource
+  MLOpsProjectServingPipelineARNC1300520:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':codepipeline:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'MLOpsProjectServingCodePipeline1C5199EB'
+      Name: !Join
+        - ''
+        - - /sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - /Serving/CodePipelineARN
+      Tags:
+        sagemaker:project-id: !Ref 'SageMakerProjectId'
+        sagemaker:project-name: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/Serving/PipelineARN/Resource
+  MLOpsProjectServingAutoApprovalFlagB340F4A4:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: '1'
+      AllowedPattern: '[0,1]'
+      Name: !Join
+        - ''
+        - - /sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - /Serving/AutoApprovalFlag
+      Tags:
+        sagemaker:project-id: !Ref 'SageMakerProjectId'
+        sagemaker:project-name: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/Serving/AutoApprovalFlag/Resource
+  MLOpsProjectsagemakerServingRepositoryL17490ED95:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - -Serving
+      Code:
+        BranchName: main
+        S3:
+          Bucket: !Ref 'MLOpsProjectSeedBucketNameParameterBEE62386'
+          Key: serving.zip
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/sagemakerServingRepository-L1
+  MLOpsProjectServingCodePipeline1C5199EB:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Stages:
+        - Actions:
+            - ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: '1'
+              Configuration:
+                RepositoryName: !GetAtt 'MLOpsProjectsagemakerServingRepositoryL17490ED95.Name'
+                BranchName: main
+                PollForSourceChanges: false
+              Name: CodeCommit
+              Namespace: SourceVariables
+              OutputArtifacts:
+                - Name: Artifact_Source_CodeCommit
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+          Name: Source
+        - Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref 'MLOpsProjectServingBuildProject9908A58F'
+              InputArtifacts:
+                - Name: Artifact_Source_CodeCommit
+              Name: CodeBuild
+              Namespace: Synth_CodeBuild_NS
+              OutputArtifacts:
+                - Name: Artifact_Synth_CodeBuild
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+            - ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: '1'
+              Configuration:
+                NotificationArn: !Ref 'MLOpsProjectCiCdTopic3F3B6A5C'
+                CustomData: !Join
+                  - ''
+                  - - !Ref 'SageMakerProjectName'
+                    - "-Serving ready to be deployed.\nCommit #{SourceVariables.CommitId}\n#{SourceVariables.CommitMessage}"
+                ExternalEntityLink: !Join
+                  - ''
+                  - - https://
+                    - !Ref 'AWS::Region'
+                    - .console.aws.amazon.com/codesuite/codebuild/
+                    - !Ref 'AWS::AccountId'
+                    - /projects/
+                    - !Ref 'MLOpsProjectServingBuildProject9908A58F'
+                    - /build/#{Synth_CodeBuild_NS.CODEBUILD_BUILD_ID}
+              Name: ManualApproval
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 2
+          Name: Synth
+        - Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref 'MLOpsProjectServingDeployProject5BCB8518'
+              InputArtifacts:
+                - Name: Artifact_Synth_CodeBuild
+              Name: Deploy
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+          Name: Deploy
+      ArtifactStore:
+        Location: !Ref 'MLOpsProjectProjectBucket043BFA46'
+        Type: S3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -Serving
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/ServingCodePipeline/Resource
+  MLOpsProjectServingBuildProject9908A58F:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: PROJECT_BUCKET
+            Type: PLAINTEXT
+            Value: !Ref 'MLOpsProjectProjectBucket043BFA46'
+          - Name: SAGEMAKER_PIPELINE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: SAGEMAKER_STUDIO_USER_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Ref 'DemoSMSUserRole'
+          - Name: SAGEMAKER_PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectName'
+          - Name: SAGEMAKER_PROJECT_ID
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectId'
+          - Name: CODEPIPELINE_CONSTRUCT_ID
+            Type: PLAINTEXT
+            Value: Serving
+          - Name: EVENTS_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: LAMBDA_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: API_GATEWAY_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: GLUE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+        Image: aws/codebuild/standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      ServiceRole: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Source:
+        BuildSpec: |-
+          {
+            "version": "0.2",
+            "phases": {
+              "install": {
+                "runtime-versions": {
+                  "nodejs": "12",
+                  "python": "3.8"
+                },
+                "commands": [
+                  "npm install aws-cdk@latest",
+                  "npm update",
+                  "python -m pip install -U -r requirements.txt"
+                ]
+              },
+              "build": {
+                "commands": [
+                  "npx cdk diff --path-metadata false"
+                ]
+              }
+            },
+            "artifacts": {
+              "base-directory": "cdk.out",
+              "files": [
+                "**/*"
+              ]
+            },
+            "env": {
+              "exported-variables": [
+                "CODEBUILD_BUILD_ID",
+                "CODEBUILD_BUILD_NUMBER"
+              ]
+            }
+          }
+        Type: CODEPIPELINE
+      Cache:
+        Type: NO_CACHE
+      EncryptionKey: alias/aws/s3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -Serving-Synth
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/ServingBuildProject/Resource
+  MLOpsProjectServingDeployProject5BCB8518:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: PROJECT_BUCKET
+            Type: PLAINTEXT
+            Value: !Ref 'MLOpsProjectProjectBucket043BFA46'
+          - Name: SAGEMAKER_PIPELINE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: SAGEMAKER_STUDIO_USER_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Ref 'DemoSMSUserRole'
+          - Name: SAGEMAKER_PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectName'
+          - Name: SAGEMAKER_PROJECT_ID
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectId'
+          - Name: CODEPIPELINE_CONSTRUCT_ID
+            Type: PLAINTEXT
+            Value: Serving
+          - Name: EVENTS_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: LAMBDA_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: API_GATEWAY_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: GLUE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+        Image: aws/codebuild/standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: false
+        Type: LINUX_CONTAINER
+      ServiceRole: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Source:
+        BuildSpec: |-
+          {
+            "version": "0.2",
+            "phases": {
+              "install": {
+                "runtime-versions": {
+                  "nodejs": "12"
+                },
+                "commands": [
+                  "npm install -g aws-cdk@latest"
+                ]
+              },
+              "build": {
+                "commands": [
+                  "cdk -a . deploy --all --require-approval=never --verbose"
+                ]
+              }
+            }
+          }
+        Type: CODEPIPELINE
+      Cache:
+        Modes:
+          - LOCAL_DOCKER_LAYER_CACHE
+        Type: LOCAL
+      EncryptionKey: alias/aws/s3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -ServingDeploy
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/ServingDeployProject/Resource
+  MLOpsProjectFeaturesIngestionPipelineCodeCommitRuleF4BC17BF:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule to trigger a build when code is updated in CodeCommit.
+      EventPattern:
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - main
+        detail-type:
+          - CodeCommit Repository State Change
+        resources:
+          - !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':codecommit:'
+              - !Ref 'AWS::Region'
+              - ':'
+              - !Ref 'AWS::AccountId'
+              - ':'
+              - !GetAtt 'MLOpsProjectsagemakerFeaturesIngestionPipelineRepositoryL1D4DB9DEE.Name'
+        source:
+          - aws.codecommit
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - -codecommit-FeaturesIngestionPipeline
+      State: ENABLED
+      Targets:
+        - Arn: !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':codepipeline:'
+              - !Ref 'AWS::Region'
+              - ':'
+              - !Ref 'AWS::AccountId'
+              - ':'
+              - !Ref 'MLOpsProjectFeaturesIngestionPipelineCodePipeline08A12E3F'
+          Id: Target0
+          RoleArn: !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':iam::'
+              - !Ref 'AWS::AccountId'
+              - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/FeaturesIngestionPipeline/CodeCommitRule/Resource
+  MLOpsProjectFeaturesIngestionPipelinePipelineARNED388A5C:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':codepipeline:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'MLOpsProjectFeaturesIngestionPipelineCodePipeline08A12E3F'
+      Name: !Join
+        - ''
+        - - /sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - /FeaturesIngestionPipeline/CodePipelineARN
+      Tags:
+        sagemaker:project-id: !Ref 'SageMakerProjectId'
+        sagemaker:project-name: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/FeaturesIngestionPipeline/PipelineARN/Resource
+  MLOpsProjectFeaturesIngestionPipelineAutoApprovalFlagF643D1DF:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: '1'
+      AllowedPattern: '[0,1]'
+      Name: !Join
+        - ''
+        - - /sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - /FeaturesIngestionPipeline/AutoApprovalFlag
+      Tags:
+        sagemaker:project-id: !Ref 'SageMakerProjectId'
+        sagemaker:project-name: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/FeaturesIngestionPipeline/AutoApprovalFlag/Resource
+  MLOpsProjectsagemakerFeaturesIngestionPipelineRepositoryL1D4DB9DEE:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - -FeaturesIngestionPipeline
+      Code:
+        BranchName: main
+        S3:
+          Bucket: !Ref 'MLOpsProjectSeedBucketNameParameterBEE62386'
+          Key: features_ingestion_pipeline.zip
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/sagemakerFeaturesIngestionPipelineRepository-L1
+  MLOpsProjectFeaturesIngestionPipelineCodePipeline08A12E3F:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Stages:
+        - Actions:
+            - ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: '1'
+              Configuration:
+                RepositoryName: !GetAtt 'MLOpsProjectsagemakerFeaturesIngestionPipelineRepositoryL1D4DB9DEE.Name'
+                BranchName: main
+                PollForSourceChanges: false
+              Name: CodeCommit
+              Namespace: SourceVariables
+              OutputArtifacts:
+                - Name: Artifact_Source_CodeCommit
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+          Name: Source
+        - Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref 'MLOpsProjectFeaturesIngestionPipelineBuildProject4B6F48FF'
+              InputArtifacts:
+                - Name: Artifact_Source_CodeCommit
+              Name: CodeBuild
+              Namespace: Synth_CodeBuild_NS
+              OutputArtifacts:
+                - Name: Artifact_Synth_CodeBuild
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+            - ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: '1'
+              Configuration:
+                NotificationArn: !Ref 'MLOpsProjectCiCdTopic3F3B6A5C'
+                CustomData: !Join
+                  - ''
+                  - - !Ref 'SageMakerProjectName'
+                    - "-FeaturesIngestionPipeline ready to be deployed.\nCommit #{SourceVariables.CommitId}\n#{SourceVariables.CommitMessage}"
+                ExternalEntityLink: !Join
+                  - ''
+                  - - https://
+                    - !Ref 'AWS::Region'
+                    - .console.aws.amazon.com/codesuite/codebuild/
+                    - !Ref 'AWS::AccountId'
+                    - /projects/
+                    - !Ref 'MLOpsProjectFeaturesIngestionPipelineBuildProject4B6F48FF'
+                    - /build/#{Synth_CodeBuild_NS.CODEBUILD_BUILD_ID}
+              Name: ManualApproval
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 2
+          Name: Synth
+        - Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref 'MLOpsProjectFeaturesIngestionPipelineDeployProjectE3C18402'
+              InputArtifacts:
+                - Name: Artifact_Synth_CodeBuild
+              Name: Deploy
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+          Name: Deploy
+      ArtifactStore:
+        Location: !Ref 'MLOpsProjectProjectBucket043BFA46'
+        Type: S3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -FeaturesIngestionPipeline
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/FeaturesIngestionPipelineCodePipeline/Resource
+  MLOpsProjectFeaturesIngestionPipelineBuildProject4B6F48FF:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: PROJECT_BUCKET
+            Type: PLAINTEXT
+            Value: !Ref 'MLOpsProjectProjectBucket043BFA46'
+          - Name: SAGEMAKER_PIPELINE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: SAGEMAKER_STUDIO_USER_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Ref 'DemoSMSUserRole'
+          - Name: SAGEMAKER_PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectName'
+          - Name: SAGEMAKER_PROJECT_ID
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectId'
+          - Name: CODEPIPELINE_CONSTRUCT_ID
+            Type: PLAINTEXT
+            Value: FeaturesIngestionPipeline
+          - Name: EVENTS_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: LAMBDA_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: API_GATEWAY_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: GLUE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+        Image: aws/codebuild/standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      ServiceRole: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Source:
+        BuildSpec: |-
+          {
+            "version": "0.2",
+            "phases": {
+              "install": {
+                "runtime-versions": {
+                  "nodejs": "12",
+                  "python": "3.8"
+                },
+                "commands": [
+                  "npm install aws-cdk@latest",
+                  "npm update",
+                  "python -m pip install -U -r requirements.txt"
+                ]
+              },
+              "build": {
+                "commands": [
+                  "npx cdk diff --path-metadata false"
+                ]
+              }
+            },
+            "artifacts": {
+              "base-directory": "cdk.out",
+              "files": [
+                "**/*"
+              ]
+            },
+            "env": {
+              "exported-variables": [
+                "CODEBUILD_BUILD_ID",
+                "CODEBUILD_BUILD_NUMBER"
+              ]
+            }
+          }
+        Type: CODEPIPELINE
+      Cache:
+        Type: NO_CACHE
+      EncryptionKey: alias/aws/s3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -FeaturesIngestionPipeline-Synth
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/FeaturesIngestionPipelineBuildProject/Resource
+  MLOpsProjectFeaturesIngestionPipelineDeployProjectE3C18402:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: PROJECT_BUCKET
+            Type: PLAINTEXT
+            Value: !Ref 'MLOpsProjectProjectBucket043BFA46'
+          - Name: SAGEMAKER_PIPELINE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: SAGEMAKER_STUDIO_USER_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Ref 'DemoSMSUserRole'
+          - Name: SAGEMAKER_PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectName'
+          - Name: SAGEMAKER_PROJECT_ID
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectId'
+          - Name: CODEPIPELINE_CONSTRUCT_ID
+            Type: PLAINTEXT
+            Value: FeaturesIngestionPipeline
+          - Name: EVENTS_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: LAMBDA_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: API_GATEWAY_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: GLUE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+        Image: aws/codebuild/standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: false
+        Type: LINUX_CONTAINER
+      ServiceRole: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Source:
+        BuildSpec: |-
+          {
+            "version": "0.2",
+            "phases": {
+              "install": {
+                "runtime-versions": {
+                  "nodejs": "12"
+                },
+                "commands": [
+                  "npm install -g aws-cdk@latest"
+                ]
+              },
+              "build": {
+                "commands": [
+                  "cdk -a . deploy --all --require-approval=never --verbose"
+                ]
+              }
+            }
+          }
+        Type: CODEPIPELINE
+      Cache:
+        Modes:
+          - LOCAL_DOCKER_LAYER_CACHE
+        Type: LOCAL
+      EncryptionKey: alias/aws/s3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -FeaturesIngestionPipelineDeploy
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/FeaturesIngestionPipelineDeployProject/Resource
+  MLOpsProjectBuildPipelineCodeCommitRule6B7B3499:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule to trigger a build when code is updated in CodeCommit.
+      EventPattern:
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - main
+        detail-type:
+          - CodeCommit Repository State Change
+        resources:
+          - !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':codecommit:'
+              - !Ref 'AWS::Region'
+              - ':'
+              - !Ref 'AWS::AccountId'
+              - ':'
+              - !GetAtt 'MLOpsProjectsagemakerBuildPipelineRepositoryL145CAECFE.Name'
+        source:
+          - aws.codecommit
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - -codecommit-BuildPipeline
+      State: ENABLED
+      Targets:
+        - Arn: !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':codepipeline:'
+              - !Ref 'AWS::Region'
+              - ':'
+              - !Ref 'AWS::AccountId'
+              - ':'
+              - !Ref 'MLOpsProjectBuildPipelineCodePipelineCEB3B469'
+          Id: Target0
+          RoleArn: !Join
+            - ''
+            - - 'arn:'
+              - !Ref 'AWS::Partition'
+              - ':iam::'
+              - !Ref 'AWS::AccountId'
+              - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/BuildPipeline/CodeCommitRule/Resource
+  MLOpsProjectBuildPipelinePipelineARN1AE7A0AC:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':codepipeline:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'MLOpsProjectBuildPipelineCodePipelineCEB3B469'
+      Name: !Join
+        - ''
+        - - /sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - /BuildPipeline/CodePipelineARN
+      Tags:
+        sagemaker:project-id: !Ref 'SageMakerProjectId'
+        sagemaker:project-name: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/BuildPipeline/PipelineARN/Resource
+  MLOpsProjectBuildPipelineAutoApprovalFlag29074A0B:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: '1'
+      AllowedPattern: '[0,1]'
+      Name: !Join
+        - ''
+        - - /sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - /BuildPipeline/AutoApprovalFlag
+      Tags:
+        sagemaker:project-id: !Ref 'SageMakerProjectId'
+        sagemaker:project-name: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/BuildPipeline/AutoApprovalFlag/Resource
+  MLOpsProjectsagemakerBuildPipelineRepositoryL145CAECFE:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - -BuildPipeline
+      Code:
+        BranchName: main
+        S3:
+          Bucket: !Ref 'MLOpsProjectSeedBucketNameParameterBEE62386'
+          Key: build_pipeline.zip
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/sagemakerBuildPipelineRepository-L1
+  MLOpsProjectBuildPipelineCodePipelineCEB3B469:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Stages:
+        - Actions:
+            - ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: '1'
+              Configuration:
+                RepositoryName: !GetAtt 'MLOpsProjectsagemakerBuildPipelineRepositoryL145CAECFE.Name'
+                BranchName: main
+                PollForSourceChanges: false
+              Name: CodeCommit
+              Namespace: SourceVariables
+              OutputArtifacts:
+                - Name: Artifact_Source_CodeCommit
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+          Name: Source
+        - Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref 'MLOpsProjectBuildPipelineBuildProject1B64C858'
+              InputArtifacts:
+                - Name: Artifact_Source_CodeCommit
+              Name: CodeBuild
+              Namespace: Synth_CodeBuild_NS
+              OutputArtifacts:
+                - Name: Artifact_Synth_CodeBuild
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+            - ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: '1'
+              Configuration:
+                NotificationArn: !Ref 'MLOpsProjectCiCdTopic3F3B6A5C'
+                CustomData: !Join
+                  - ''
+                  - - !Ref 'SageMakerProjectName'
+                    - "-BuildPipeline ready to be deployed.\nCommit #{SourceVariables.CommitId}\n#{SourceVariables.CommitMessage}"
+                ExternalEntityLink: !Join
+                  - ''
+                  - - https://
+                    - !Ref 'AWS::Region'
+                    - .console.aws.amazon.com/codesuite/codebuild/
+                    - !Ref 'AWS::AccountId'
+                    - /projects/
+                    - !Ref 'MLOpsProjectBuildPipelineBuildProject1B64C858'
+                    - /build/#{Synth_CodeBuild_NS.CODEBUILD_BUILD_ID}
+              Name: ManualApproval
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 2
+          Name: Synth
+        - Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref 'MLOpsProjectBuildPipelineDeployProject74964EFB'
+              InputArtifacts:
+                - Name: Artifact_Synth_CodeBuild
+              Name: Deploy
+              RoleArn: !Join
+                - ''
+                - - 'arn:'
+                  - !Ref 'AWS::Partition'
+                  - ':iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+              RunOrder: 1
+          Name: Deploy
+      ArtifactStore:
+        Location: !Ref 'MLOpsProjectProjectBucket043BFA46'
+        Type: S3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -BuildPipeline
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/BuildPipelineCodePipeline/Resource
+  MLOpsProjectBuildPipelineBuildProject1B64C858:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: PROJECT_BUCKET
+            Type: PLAINTEXT
+            Value: !Ref 'MLOpsProjectProjectBucket043BFA46'
+          - Name: SAGEMAKER_PIPELINE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: SAGEMAKER_STUDIO_USER_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Ref 'DemoSMSUserRole'
+          - Name: SAGEMAKER_PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectName'
+          - Name: SAGEMAKER_PROJECT_ID
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectId'
+          - Name: CODEPIPELINE_CONSTRUCT_ID
+            Type: PLAINTEXT
+            Value: BuildPipeline
+          - Name: EVENTS_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: LAMBDA_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: API_GATEWAY_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: GLUE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+        Image: aws/codebuild/standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      ServiceRole: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Source:
+        BuildSpec: |-
+          {
+            "version": "0.2",
+            "phases": {
+              "install": {
+                "runtime-versions": {
+                  "nodejs": "12",
+                  "python": "3.8"
+                },
+                "commands": [
+                  "npm install aws-cdk@latest",
+                  "npm update",
+                  "python -m pip install -U -r requirements.txt"
+                ]
+              },
+              "build": {
+                "commands": [
+                  "npx cdk diff --path-metadata false"
+                ]
+              }
+            },
+            "artifacts": {
+              "base-directory": "cdk.out",
+              "files": [
+                "**/*"
+              ]
+            },
+            "env": {
+              "exported-variables": [
+                "CODEBUILD_BUILD_ID",
+                "CODEBUILD_BUILD_NUMBER"
+              ]
+            }
+          }
+        Type: CODEPIPELINE
+      Cache:
+        Type: NO_CACHE
+      EncryptionKey: alias/aws/s3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -BuildPipeline-Synth
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/BuildPipelineBuildProject/Resource
+  MLOpsProjectBuildPipelineDeployProject74964EFB:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: PROJECT_BUCKET
+            Type: PLAINTEXT
+            Value: !Ref 'MLOpsProjectProjectBucket043BFA46'
+          - Name: SAGEMAKER_PIPELINE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: SAGEMAKER_STUDIO_USER_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Ref 'DemoSMSUserRole'
+          - Name: SAGEMAKER_PROJECT_NAME
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectName'
+          - Name: SAGEMAKER_PROJECT_ID
+            Type: PLAINTEXT
+            Value: !Ref 'SageMakerProjectId'
+          - Name: CODEPIPELINE_CONSTRUCT_ID
+            Type: PLAINTEXT
+            Value: BuildPipeline
+          - Name: EVENTS_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: LAMBDA_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: API_GATEWAY_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Name: GLUE_ROLE_ARN
+            Type: PLAINTEXT
+            Value: !Join
+              - ''
+              - - 'arn:'
+                - !Ref 'AWS::Partition'
+                - ':iam::'
+                - !Ref 'AWS::AccountId'
+                - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+        Image: aws/codebuild/standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: false
+        Type: LINUX_CONTAINER
+      ServiceRole: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':iam::'
+          - !Ref 'AWS::AccountId'
+          - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+      Source:
+        BuildSpec: |-
+          {
+            "version": "0.2",
+            "phases": {
+              "install": {
+                "runtime-versions": {
+                  "nodejs": "12"
+                },
+                "commands": [
+                  "npm install -g aws-cdk@latest"
+                ]
+              },
+              "build": {
+                "commands": [
+                  "cdk -a . deploy --all --require-approval=never --verbose"
+                ]
+              }
+            }
+          }
+        Type: CODEPIPELINE
+      Cache:
+        Modes:
+          - LOCAL_DOCKER_LAYER_CACHE
+        Type: LOCAL
+      EncryptionKey: alias/aws/s3
+      Name: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectId'
+          - -BuildPipelineDeploy
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/BuildPipelineDeployProject/Resource
+  MLOpsProjectsagemakerMLOpsProjectRepositoryL180A9BC0B:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Join
+        - ''
+        - - sagemaker-
+          - !Ref 'SageMakerProjectName'
+          - -Demo
+      Code:
+        BranchName: main
+        S3:
+          Bucket: !Ref 'MLOpsProjectSeedBucketNameParameterBEE62386'
+          Key: demo-workspace.zip
+      Tags:
+        - Key: sagemaker:project-id
+          Value: !Ref 'SageMakerProjectId'
+        - Key: sagemaker:project-name
+          Value: !Ref 'SageMakerProjectName'
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: SynthStage/MLOpsCfnStack/MLOpsProject/sagemakerMLOpsProjectRepository-L1
