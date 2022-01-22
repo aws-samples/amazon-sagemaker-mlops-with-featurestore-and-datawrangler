@@ -177,8 +177,8 @@ class MlopsFeaturestoreConstruct(Construct):
             name: cicd_construct(
                 self,
                 construct_id=name,
-                seed_bucket_name=o.s3_bucket_name,
-                seed_object_key=o.s3_object_key,
+                seed_bucket_name=o['s3_bucket_name'],
+                seed_object_key=o['s3_object_key'],
                 project_bucket=project_bucket,
                 sm_studio_user_role=sm_studio_user_role,
                 project_name=project_name,
@@ -194,8 +194,8 @@ class MlopsFeaturestoreConstruct(Construct):
                 self,
                 f"sagemaker{construct_id}Repository",
                 repository_name=f"sagemaker-{project_name}-Demo",
-                code_bucket=demo_asset.s3_bucket_name,
-                code_key=demo_asset.s3_object_key,
+                code_bucket=demo_asset["s3_bucket_name"],
+                code_key=demo_asset["s3_object_key"],
                 tags=[
                     cdk.CfnTag(key="sagemaker:project-id", value=project_id),
                     cdk.CfnTag(key="sagemaker:project-name", value=project_name),

@@ -1,0 +1,512 @@
+Parameters:
+  PortfolioName:
+    Type: String
+    Default: SageMaker Organization Templates
+    Description: The name of the portfolio
+    MinLength: 1
+  PortfolioOwner:
+    Type: String
+    Default: Administrator
+    Description: The owner of the portfolio
+    MaxLength: 50
+    MinLength: 1
+  ProductVersion:
+    Type: String
+    Default: "1.0"
+    Description: The product version to deploy
+    MinLength: 1
+  StudioUserRoleARN:
+    Type: String
+    AllowedPattern: ^arn:aws[a-z\-]*:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+$
+    Description: Studio User Role ARN
+    MinLength: 1
+Resources:
+  LaunchRolePolicyA9E2E5B1:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - SNS:CreateTopic
+              - SNS:GetTopicAttributes
+              - SNS:DeleteTopic
+              - SNS:ListTagsForResource
+              - SNS:TagResource
+              - SNS:UnTagResource
+              - SNS:Subscribe
+              - SNS:Unsubscribe
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":sns:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :sagemaker-*
+          - Action: codebuild:BatchGetProjects
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":codebuild:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :project/sagemaker*
+          - Action: s3:*
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - :s3:::cdktoolkit-stagingbucket-*
+          - Action: ssm:GetParameter
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":ssm:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :parameter/cdk-bootstrap/*
+          - Action:
+              - ssm:PutParameter
+              - ssm:DeleteParameter
+              - ssm:AddTagsToResource
+              - ssm:DescribeParameters
+              - ssm:LabelParameterVersion
+              - ssm:ListTagsForResource
+              - ssm:RemoveTagsFromResource
+              - ssm:DeleteParameters
+            Effect: Allow
+            Resource:
+              - Fn::Join:
+                  - ""
+                  - - "arn:aws:ssm:"
+                    - Ref: AWS::Region
+                    - ":"
+                    - Ref: AWS::AccountId
+                    - :parameter/sagemaker*
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":ssm:"
+                    - Ref: AWS::Region
+                    - ":"
+                    - Ref: AWS::AccountId
+                    - :parameter/sagemaker*
+          - Action: lambda:GetLayerVersion
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":lambda:"
+                  - Ref: AWS::Region
+                  - :017000801446:layer:AWSLambdaPowertoolsPython:4
+          - Action:
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:getRolePolicy
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":iam::"
+                  - Ref: AWS::AccountId
+                  - :role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+        Version: "2012-10-17"
+      PolicyName: LaunchRolePolicyA9E2E5B1
+      Roles:
+        - AmazonSageMakerServiceCatalogProductsLaunchRole
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/LaunchRole/Policy/Resource
+  SeedBucket6B8F2A02:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: mlopsdemoscprojectstack-a46ba749
+      Tags:
+        - Key: aws-cdk:auto-delete-objects
+          Value: "true"
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/SeedBucket/Resource
+  SeedBucketPolicy8C90C691:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: SeedBucket6B8F2A02
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:GetBucket*
+              - s3:List*
+              - s3:DeleteObject*
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::GetAtt:
+                  - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
+                  - Arn
+            Resource:
+              - Fn::GetAtt:
+                  - SeedBucket6B8F2A02
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - SeedBucket6B8F2A02
+                        - Arn
+                    - /*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/SeedBucket/Policy/Resource
+  SeedBucketAutoDeleteObjectsCustomResourceE8EC42FD:
+    Type: Custom::S3AutoDeleteObjects
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F
+          - Arn
+      BucketName:
+        Ref: SeedBucket6B8F2A02
+    DependsOn:
+      - SeedBucketPolicy8C90C691
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/SeedBucket/AutoDeleteObjectsCustomResource/Default
+  CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+      ManagedPolicyArns:
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role
+  CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: bdb08b9984816ecf43301a0c6d8913e270ee2448940b6b95e430dd222a4d90be.zip
+      Timeout: 900
+      MemorySize: 128
+      Handler: __entrypoint__.handler
+      Role:
+        Fn::GetAtt:
+          - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
+          - Arn
+      Runtime: nodejs12.x
+      Description:
+        Fn::Join:
+          - ""
+          - - "Lambda function for auto-deleting objects in "
+            - Ref: SeedBucket6B8F2A02
+            - " S3 bucket."
+    DependsOn:
+      - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler
+      aws:asset:path: asset.bdb08b9984816ecf43301a0c6d8913e270ee2448940b6b95e430dd222a4d90be
+      aws:asset:property: Code
+  SeedLambdaServiceRoleD1F749F2:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/SeedLambda/ServiceRole/Resource
+  SeedLambdaServiceRoleDefaultPolicy80CC1930:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:DeleteObject*
+              - s3:PutObject
+              - s3:Abort*
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - SeedBucket6B8F2A02
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - SeedBucket6B8F2A02
+                        - Arn
+                    - /*
+        Version: "2012-10-17"
+      PolicyName: SeedLambdaServiceRoleDefaultPolicy80CC1930
+      Roles:
+        - Ref: SeedLambdaServiceRoleD1F749F2
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/SeedLambda/ServiceRole/DefaultPolicy/Resource
+  SeedLambda763BF61F:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import os
+          import shutil
+          import subprocess
+          import tempfile
+          from pathlib import Path
+
+          import boto3
+          import cfnresponse
+          from aws_lambda_powertools import Logger
+
+          logger = Logger()
+          s3 = boto3.resource("s3")
+
+          bucket = os.getenv("SeedBucket")
+
+
+          @logger.inject_lambda_context(log_event=True)
+          def lambda_handler(event, context):
+              response_status = cfnresponse.SUCCESS
+              try:
+                  if "RequestType" in event and event["RequestType"] == "Create":
+                      logger.info("Processing CREATE event")
+                      response_data = on_create(event, context)
+                  if "RequestType" in event and event["RequestType"] == "Update":
+                      logger.info("Processing UPDATE event")
+                      response_data = on_create(event, context)
+                  if "RequestType" in event and event["RequestType"] == "Delete":
+                      logger.info("Processing DELETE event")
+                      response_data = no_op(event, context)
+              except Exception:
+                  logger.exception("Something went wrong")
+                  response_status = cfnresponse.FAILED
+                  response_data = {}
+
+              cfnresponse.send(event, context, response_status, response_data, "")
+
+
+          def on_create(event, _):
+              with tempfile.TemporaryDirectory() as td:
+                  base_dir = Path(td)
+                  props = event["ResourceProperties"]
+
+                  git_repo = props["GitRepository"]
+
+                  branch = None
+                  if "Branch" in props:
+                      branch = props["Branch"]
+
+                  git_clone_bash(url=git_repo, to_path=base_dir.as_posix(), branch=branch)
+
+                  try:
+                      seed_paths = props["SeedPaths"]
+                      seed_keys = [seed_code_upload(base_dir / k) for k in seed_paths]
+                  except:
+                      logger.exception("No Seed Code path provided")
+
+                  try:
+                      template_path = props["TemplatePath"]
+                      template_keys = templates_upload(base_dir / template_path)
+                  except:
+                      logger.exception("No Template path provided")
+
+              return dict(
+                  seed_keys=seed_keys,
+                  template_key=template_keys,
+              )
+
+
+          def no_op(_, __):
+              pass
+
+
+          def templates_upload(template_path: Path):
+              key = Path(template_path).name
+              s3_o = s3.Object(bucket_name=bucket, key=key)
+              s3_o.upload_file(template_path)
+              logger.info(f"Uploaded {template_path} to s3://{bucket}/{key}")
+
+
+          def seed_code_upload(dir_path: Path):
+              with tempfile.NamedTemporaryFile() as tf:
+                  archive = shutil.make_archive(
+                      base_name=tf.name,
+                      format="zip",
+                      root_dir=dir_path,
+                      base_dir=".",
+                  )
+                  logger.info(f"Compressing {dir_path} into {archive}")
+                  key = Path(dir_path).name + ".zip"
+                  s3_o = s3.Object(bucket_name=bucket, key=key)
+                  s3_o.upload_file(archive)
+              logger.info(f"Uploaded {archive} to s3://{bucket}/{key}")
+              return s3_o.key
+
+
+          def git_clone_bash(url: str, to_path: str, branch: str = None):
+              cmd = ["git", "clone", "--depth=1"]
+              if branch is not None:
+                  cmd += ["-b", branch]
+              cmd += [url, to_path]
+              subprocess.run(cmd)
+      Role:
+        Fn::GetAtt:
+          - SeedLambdaServiceRoleD1F749F2
+          - Arn
+      Environment:
+        Variables:
+          SeedBucket:
+            Ref: SeedBucket6B8F2A02
+      Handler: index.lambda_handler
+      Layers:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":lambda:"
+              - Ref: AWS::Region
+              - :017000801446:layer:AWSLambdaPowertoolsPython:4
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":lambda:"
+              - Ref: AWS::Region
+              - :553035198032:layer:git-lambda2:8
+      Runtime: python3.9
+      Timeout: 100
+    DependsOn:
+      - SeedLambdaServiceRoleDefaultPolicy80CC1930
+      - SeedLambdaServiceRoleD1F749F2
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/SeedLambda/Resource
+  CrCloneSeeds:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - SeedLambda763BF61F
+          - Arn
+      GitRepository: https://github.com/aws-samples/amazon-sagemaker-mlops-with-featurestore-and-datawrangler
+      Branch: artifact-less_deployment
+      SeedPaths:
+        - repos/serving
+        - repos/features_ingestion_pipeline
+        - repos/build_pipeline
+        - demo-workspace
+      TemplatePath: dist/product.template.json
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/CrCloneSeeds/Default
+  Portfolio856A4190:
+    Type: AWS::ServiceCatalog::Portfolio
+    Properties:
+      DisplayName:
+        Ref: PortfolioName
+      ProviderName:
+        Ref: PortfolioOwner
+      Description: Organization templates for MLOps Demo
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/Portfolio/Resource
+  PortfolioPortfolioProductAssociationbf54b8ec5c71E72340DA:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId:
+        Ref: Portfolio856A4190
+      ProductId:
+        Ref: Product896941B4
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/Portfolio/PortfolioProductAssociationbf54b8ec5c71
+  PortfolioPortolioPrincipalAssociationa07fea3814e1A98C032D:
+    Type: AWS::ServiceCatalog::PortfolioPrincipalAssociation
+    Properties:
+      PortfolioId:
+        Ref: Portfolio856A4190
+      PrincipalARN:
+        Ref: StudioUserRoleARN
+      PrincipalType: IAM
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/Portfolio/PortolioPrincipalAssociationa07fea3814e1
+  PortfolioLaunchRoleConstraintbf54b8ec5c716E96D046:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId:
+        Ref: Portfolio856A4190
+      ProductId:
+        Ref: Product896941B4
+      RoleArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":iam::"
+            - Ref: AWS::AccountId
+            - :role/service-role/AmazonSageMakerServiceCatalogProductsLaunchRole
+    DependsOn:
+      - PortfolioPortfolioProductAssociationbf54b8ec5c71E72340DA
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/Portfolio/LaunchRoleConstraintbf54b8ec5c71
+  Product896941B4:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Amazon SageMaker MLOps Demo
+      Owner:
+        Ref: PortfolioOwner
+      ProvisioningArtifactParameters:
+        - DisableTemplateValidation: false
+          Info:
+            LoadTemplateFromURL:
+              Fn::Join:
+                - ""
+                - - https://s3.
+                  - Ref: AWS::Region
+                  - "."
+                  - Ref: AWS::URLSuffix
+                  - /
+                  - Ref: SeedBucket6B8F2A02
+                  - /
+                  - Fn::GetAtt:
+                      - CrCloneSeeds
+                      - template_key
+          Name:
+            Ref: ProductVersion
+      Description: Amazon SageMaker MLOps demo project with Feature Ingestion, Model Build, and Deployment pipelines
+      Tags:
+        - Key: sagemaker:studio-visibility
+          Value: "true"
+    Metadata:
+      aws:cdk:path: MLOpsDemoSCProjectStack/Product/Resource
+
