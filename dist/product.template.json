@@ -19,7 +19,7 @@
       "AllowedPattern": "^arn:aws[a-z\\-]*:iam::\\d{12}:role/?[a-zA-Z_0-9+=,.@\\-_/]+$",
       "Description": "Amazon SageMaker User Execution Role to run the Demo walk-through."
     },
-    "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter": {
+    "MLOpsProjectSeedBucketNameParameterBEE62386": {
       "Type": "AWS::SSM::Parameter::Value<String>",
       "Default": "/MLOpsDemoSCProjectStack/SeedBucketName"
     }
@@ -453,7 +453,10 @@
               {
                 "Ref": "SageMakerProjectId"
               },
-              "-29d30e6"
+              "-",
+              {
+                "Ref": "AWS::AccountId"
+              }
             ]
           ]
         },
@@ -863,7 +866,7 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter"
+              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
             },
             "Key": "serving.zip"
           }
@@ -1769,7 +1772,7 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter"
+              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
             },
             "Key": "features_ingestion_pipeline.zip"
           }
@@ -2675,7 +2678,7 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter"
+              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
             },
             "Key": "build_pipeline.zip"
           }
@@ -3384,7 +3387,7 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "SsmParameterValueMLOpsDemoSCProjectStackSeedBucketNameC96584B6F00A464EAD1953AFF4B05118Parameter"
+              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
             },
             "Key": "demo-workspace.zip"
           }

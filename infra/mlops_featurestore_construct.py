@@ -132,7 +132,7 @@ class MlopsFeaturestoreConstruct(Construct):
             project_bucket = s3.Bucket(
                 self,
                 "ProjectBucket",
-                bucket_name=f"sagemaker-{project_id}-{uuid4().hex[:7]}",
+                bucket_name=f"sagemaker-{project_id}-{Aws.ACCOUNT_ID}",
             )
             project_bucket.node.add_dependency(policy_result.policy_dependable)
 
@@ -176,17 +176,12 @@ class MlopsFeaturestoreConstruct(Construct):
             )
         )
 
-        # seed_bucket_name = ssm.StringParameter.from_string_parameter_attributes(
-        #     self,
-        #     "SeedBucketName",
-        #     parameter_name=ssm_parameter_seed_bucket_name,
-        #     simple_name=False,
-        # ).string_value
-
-        seed_bucket_name = ssm.StringParameter.value_for_string_parameter(
+        seed_bucket_name = ssm.StringParameter.from_string_parameter_attributes(
             self,
+            "SeedBucketName",
             parameter_name=ssm_parameter_seed_bucket_name,
-        )
+            simple_name=False,
+        ).string_value
 
         cicd_dict = {
             name: cicd_construct(
