@@ -56,7 +56,7 @@ def on_create(event, _):
 
         try:
             template_path = props["TemplatePath"]
-            template_keys = templates_upload(base_dir / template_path)
+            template_keys = template_upload(base_dir / template_path)
         except:
             logger.exception("No Template path provided")
 
@@ -70,10 +70,10 @@ def no_op(_, __):
     pass
 
 
-def templates_upload(template_path: Path):
+def template_upload(template_path: Path):
     key = Path(template_path).name
     s3_o = s3.Object(bucket_name=bucket, key=key)
-    s3_o.upload_file(template_path)
+    s3_o.upload_file(template_path.as_posix())
     logger.info(f"Uploaded {template_path} to s3://{bucket}/{key}")
 
 

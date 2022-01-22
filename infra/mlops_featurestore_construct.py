@@ -6,7 +6,7 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_lambda_event_sources as lambda_event_sources
 from aws_cdk import aws_s3 as s3
-from aws_cdk import aws_s3_assets as s3_assets
+from aws_cdk import aws_ssm as ssm
 from aws_cdk import aws_sns as sns
 from constructs import Construct
 
@@ -31,7 +31,8 @@ class MlopsFeaturestoreStack(Stack):
         scope: Construct,
         construct_id: str,
         code_assets: dict,
-        demo_asset: dict,
+        demo_asset,
+        ssm_parameter_seed_bucket_name: str,
         sm_studio_user_role_arn: str = None,
         **kwargs,
     ) -> None:
@@ -80,6 +81,7 @@ class MlopsFeaturestoreStack(Stack):
             sm_studio_user_role=sm_studio_user_role,
             project_name=project_name,
             project_id=project_id,
+            ssm_parameter_seed_bucket_name=ssm_parameter_seed_bucket_name,
             code_assets=code_assets,
             demo_asset=demo_asset,
         )
@@ -93,8 +95,9 @@ class MlopsFeaturestoreConstruct(Construct):
         sm_studio_user_role: iam.Role,
         project_name: str = "MLOpsDemo",
         project_id: str = "mlopsdemo-id",
+        ssm_parameter_seed_bucket_name: str = None,
         code_assets: dict = None,
-        demo_asset: s3_assets.Asset = None,
+        demo_asset=None,
         debug_mode: bool = False,
         **kwargs,
     ) -> None:
@@ -173,12 +176,18 @@ class MlopsFeaturestoreConstruct(Construct):
             )
         )
 
+        seed_bucket_name = ssm.StringParameter.from_string_parameter_attributes(
+            self,
+            "SeedBucketName",
+            parameter_name=ssm_parameter_seed_bucket_name,
+            simple_name=False,
+        ).string_value
         cicd_dict = {
             name: cicd_construct(
                 self,
                 construct_id=name,
-                seed_bucket_name=o['s3_bucket_name'],
-                seed_object_key=o['s3_object_key'],
+                seed_bucket_name=seed_bucket_name,
+                seed_object_key=o["s3_object_key"],
                 project_bucket=project_bucket,
                 sm_studio_user_role=sm_studio_user_role,
                 project_name=project_name,
@@ -194,7 +203,7 @@ class MlopsFeaturestoreConstruct(Construct):
                 self,
                 f"sagemaker{construct_id}Repository",
                 repository_name=f"sagemaker-{project_name}-Demo",
-                code_bucket=demo_asset["s3_bucket_name"],
+                code_bucket=seed_bucket_name,
                 code_key=demo_asset["s3_object_key"],
                 tags=[
                     cdk.CfnTag(key="sagemaker:project-id", value=project_id),

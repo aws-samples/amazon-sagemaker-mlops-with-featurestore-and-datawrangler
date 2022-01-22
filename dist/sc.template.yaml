@@ -136,101 +136,19 @@ Resources:
       aws:cdk:path: MLOpsDemoSCProjectStack/LaunchRole/Policy/Resource
   SeedBucket6B8F2A02:
     Type: AWS::S3::Bucket
-    Properties:
-      BucketName: mlopsdemoscprojectstack-a46ba749
-      Tags:
-        - Key: aws-cdk:auto-delete-objects
-          Value: "true"
     UpdateReplacePolicy: Delete
     DeletionPolicy: Delete
     Metadata:
       aws:cdk:path: MLOpsDemoSCProjectStack/SeedBucket/Resource
-  SeedBucketPolicy8C90C691:
-    Type: AWS::S3::BucketPolicy
+  SeedBucketNameFB85881A:
+    Type: AWS::SSM::Parameter
     Properties:
-      Bucket:
+      Type: String
+      Value:
         Ref: SeedBucket6B8F2A02
-      PolicyDocument:
-        Statement:
-          - Action:
-              - s3:GetBucket*
-              - s3:List*
-              - s3:DeleteObject*
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::GetAtt:
-                  - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
-                  - Arn
-            Resource:
-              - Fn::GetAtt:
-                  - SeedBucket6B8F2A02
-                  - Arn
-              - Fn::Join:
-                  - ""
-                  - - Fn::GetAtt:
-                        - SeedBucket6B8F2A02
-                        - Arn
-                    - /*
-        Version: "2012-10-17"
+      Name: /MLOpsDemoSCProjectStack/SeedBucketName
     Metadata:
-      aws:cdk:path: MLOpsDemoSCProjectStack/SeedBucket/Policy/Resource
-  SeedBucketAutoDeleteObjectsCustomResourceE8EC42FD:
-    Type: Custom::S3AutoDeleteObjects
-    Properties:
-      ServiceToken:
-        Fn::GetAtt:
-          - CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F
-          - Arn
-      BucketName:
-        Ref: SeedBucket6B8F2A02
-    DependsOn:
-      - SeedBucketPolicy8C90C691
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
-    Metadata:
-      aws:cdk:path: MLOpsDemoSCProjectStack/SeedBucket/AutoDeleteObjectsCustomResource/Default
-  CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-      ManagedPolicyArns:
-        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-    Metadata:
-      aws:cdk:path: MLOpsDemoSCProjectStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role
-  CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F:
-    Type: AWS::Lambda::Function
-    Properties:
-      Code:
-        S3Bucket:
-          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
-        S3Key: bdb08b9984816ecf43301a0c6d8913e270ee2448940b6b95e430dd222a4d90be.zip
-      Timeout: 900
-      MemorySize: 128
-      Handler: __entrypoint__.handler
-      Role:
-        Fn::GetAtt:
-          - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
-          - Arn
-      Runtime: nodejs12.x
-      Description:
-        Fn::Join:
-          - ""
-          - - "Lambda function for auto-deleting objects in "
-            - Ref: SeedBucket6B8F2A02
-            - " S3 bucket."
-    DependsOn:
-      - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
-    Metadata:
-      aws:cdk:path: MLOpsDemoSCProjectStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler
-      aws:asset:path: asset.bdb08b9984816ecf43301a0c6d8913e270ee2448940b6b95e430dd222a4d90be
-      aws:asset:property: Code
+      aws:cdk:path: MLOpsDemoSCProjectStack/SeedBucketName/Resource
   SeedLambdaServiceRoleD1F749F2:
     Type: AWS::IAM::Role
     Properties:
@@ -338,7 +256,7 @@ Resources:
 
                   try:
                       template_path = props["TemplatePath"]
-                      template_keys = templates_upload(base_dir / template_path)
+                      template_keys = template_upload(base_dir / template_path)
                   except:
                       logger.exception("No Template path provided")
 
@@ -352,10 +270,10 @@ Resources:
               pass
 
 
-          def templates_upload(template_path: Path):
+          def template_upload(template_path: Path):
               key = Path(template_path).name
               s3_o = s3.Object(bucket_name=bucket, key=key)
-              s3_o.upload_file(template_path)
+              s3_o.upload_file(template_path.as_posix())
               logger.info(f"Uploaded {template_path} to s3://{bucket}/{key}")
 
 

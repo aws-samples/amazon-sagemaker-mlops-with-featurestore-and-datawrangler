@@ -1,28 +1,17 @@
-from pathlib import Path
 import shutil
-import uuid
+from pathlib import Path
 
-from aws_cdk import (
-    ArnFormat,
-    Aws,
-    CfnParameter,
-    Stack,
-    Tags,
-    RemovalPolicy,
-    Duration,
-    CustomResource,
-)
+from aws_cdk import (ArnFormat, Aws, CfnParameter, CustomResource, Duration,
+                     RemovalPolicy, Stack, Tags)
 from aws_cdk import aws_iam as iam
-from aws_cdk import aws_servicecatalog_alpha as servicecatalog
-from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_servicecatalog_alpha as servicecatalog
+from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
 from infra.mlops_featurestore_construct import MlopsFeaturestoreStack
-from infra.utils import (
-    generate_template,
-    snake2pascal,
-)
+from infra.utils import generate_template, snake2pascal
 
 
 class ServiceCatalogStack(Stack):
@@ -99,13 +88,19 @@ class ServiceCatalogStack(Stack):
             products_use_role_arn,
         )
 
-        bucket_name = f"{self.stack_name.lower()}-{uuid.uuid4().hex[:8]}"
         seed_bucket = s3.Bucket(
             self,
             "SeedBucket",
-            auto_delete_objects=True,
+            # auto_delete_objects=True,
             removal_policy=RemovalPolicy.DESTROY,
-            bucket_name=bucket_name,
+        )
+        parameter_name=f"/{self.stack_name}/SeedBucketName"
+        seed_bucket_name = ssm.StringParameter(
+            self,
+            f"SeedBucketName",
+            parameter_name=parameter_name,
+            string_value=seed_bucket.bucket_name,
+            simple_name=False,
         )
 
         powertools_lambda_layer = lambda_.LayerVersion.from_layer_version_arn(
@@ -155,14 +150,12 @@ class ServiceCatalogStack(Stack):
 
         code_assets = {
             f"{snake2pascal(k.name)}": dict(
-                s3_bucket_name=bucket_name,
                 s3_object_key=k.name + ".zip",
             )
             for k in Path("repos").glob("*")
             if k.is_dir()
         }
         demo_asset = dict(
-            s3_bucket_name=bucket_name,
             s3_object_key="demo-workspace.zip",
         )
 
@@ -171,6 +164,7 @@ class ServiceCatalogStack(Stack):
             "MLOpsCfnStack",
             code_assets=code_assets,
             demo_asset=demo_asset,
+            ssm_parameter_seed_bucket_name=parameter_name,
             sm_studio_user_role_arn=self.node.try_get_context(key="demouserrole"),
         )
         Path("dist").mkdir(exist_ok=True)

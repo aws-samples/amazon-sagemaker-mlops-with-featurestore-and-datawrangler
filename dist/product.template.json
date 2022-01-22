@@ -18,6 +18,10 @@
       "Type": "String",
       "AllowedPattern": "^arn:aws[a-z\\-]*:iam::\\d{12}:role/?[a-zA-Z_0-9+=,.@\\-_/]+$",
       "Description": "Amazon SageMaker User Execution Role to run the Demo walkthrough."
+    },
+    "MLOpsProjectSeedBucketNameParameterBEE62386": {
+      "Type": "AWS::SSM::Parameter::Value<String>",
+      "Default": "/MLOpsDemoSCProjectStack/SeedBucketName"
     }
   },
   "Resources": {
@@ -449,7 +453,7 @@
               {
                 "Ref": "SageMakerProjectId"
               },
-              "-77da533"
+              "-9085cbe"
             ]
           ]
         },
@@ -858,7 +862,9 @@
         "Code": {
           "BranchName": "main",
           "S3": {
-            "Bucket": "mlopsdemoscprojectstack-a46ba749",
+            "Bucket": {
+              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+            },
             "Key": "serving.zip"
           }
         },
@@ -1762,7 +1768,9 @@
         "Code": {
           "BranchName": "main",
           "S3": {
-            "Bucket": "mlopsdemoscprojectstack-a46ba749",
+            "Bucket": {
+              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+            },
             "Key": "features_ingestion_pipeline.zip"
           }
         },
@@ -2666,7 +2674,9 @@
         "Code": {
           "BranchName": "main",
           "S3": {
-            "Bucket": "mlopsdemoscprojectstack-a46ba749",
+            "Bucket": {
+              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+            },
             "Key": "build_pipeline.zip"
           }
         },
@@ -3373,7 +3383,9 @@
         "Code": {
           "BranchName": "main",
           "S3": {
-            "Bucket": "mlopsdemoscprojectstack-a46ba749",
+            "Bucket": {
+              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+            },
             "Key": "demo-workspace.zip"
           }
         },
