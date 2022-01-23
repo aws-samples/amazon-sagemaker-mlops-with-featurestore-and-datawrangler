@@ -3,10 +3,11 @@ import os
 from pathlib import Path
 from typing import List, Union
 
+import aws_cdk as cdk
 from aws_cdk import aws_apigateway as apigateway
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
-from aws_cdk import core as cdk
+from constructs import Construct
 
 from infra.batch_transform_construct import BatchTransform
 from infra.model_endpoint_construct import ModelEndpointConstruct
@@ -25,7 +26,7 @@ lambda_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 class ServingStack(cdk.Stack):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         configuration_path: Union[str, Path],
         **kwargs,

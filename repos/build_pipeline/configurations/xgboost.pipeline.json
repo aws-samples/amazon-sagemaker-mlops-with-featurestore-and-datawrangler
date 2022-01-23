@@ -3,7 +3,7 @@
   "code_file_path": "pipelines/xgboost_pipeline.py",
   "pipeline_configuration": {
     "prefix": "xgboost_build",
-    "model_package_group_name": "mlops-demo-fraud-classification",
+    "model_package_group_name": "fraud-classification-xgboost",
     "model_training_script_path": "scripts/xgboost_starter_script.py",
     "metric_extraction_lambda_arn": "to be replaced",
     "create_dataset_script_path": "scripts/create_dataset.py",
@@ -60,7 +60,7 @@
   },
   "lambdas": [
     {
-      "arn_holder": "metric_extraction_lambda_arn",
+      "arn_handler": "metric_extraction_lambda_arn",
       "function_name": "extract_metrics",
       "script": "lambdas/extract_metrics/extract_metrics.py",
       "handler": "extract_metrics.lambda_handler",

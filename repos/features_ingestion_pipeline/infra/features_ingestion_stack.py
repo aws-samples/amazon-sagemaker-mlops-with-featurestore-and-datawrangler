@@ -1,8 +1,8 @@
+import json
 import logging
 import os
 from pathlib import Path
 from typing import List, Union
-from uuid import uuid4
 
 import aws_cdk as cdk
 from aws_cdk import aws_events as events
@@ -13,7 +13,8 @@ from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
 from infra.feature_store_utils import get_fg_conf
-from infra.sm_pipeline_utils import generate_pipeline_definition, get_pipeline_props
+from infra.sm_pipeline_utils import (generate_pipeline_definition,
+                                     get_pipeline_props)
 
 project_bucket_name = os.getenv("PROJECT_BUCKET")
 sagemaker_execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
@@ -39,20 +40,6 @@ class FeatureIngestionStack(cdk.Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # role = iam.Role(
-        #     self,
-        #     "FeatureGroupRole",
-        #     assumed_by=iam.ServicePrincipal("sagemaker.amazonaws.com"),
-        #     managed_policies=[
-        #         iam.ManagedPolicy.from_aws_managed_policy_name(
-        #             "AmazonSageMakerFeatureStoreAccess"
-        #         )
-        #     ],
-        # )
-
-        # sm_studio_user_role = iam.Role.from_role_arn(
-        #     self, "SageMakerStudioUserRole", role_arn=sm_studio_user_role_arn
-        # )
         sagemaker_execution_role = iam.Role.from_role_arn(
             self, "SageMakerExecutionRole", role_arn=sagemaker_execution_role_arn
         )
@@ -66,30 +53,14 @@ class FeatureIngestionStack(cdk.Stack):
         eventbridge_role = iam.Role.from_role_arn(
             self, "EventBridgeRole", role_arn=events_role_arn
         )
-        # eventbridge_role = iam.Role(
-        #     self,
-        #     "EventBridgeRole",
-        #     assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
-        #     inline_policies=[
-        #         iam.PolicyDocument(
-        #             statements=[
-        #                 iam.PolicyStatement(
-        #                     actions=["sagemaker:StartPipelineExecution"],
-        #                     resources=[
-        #                         f"arn:aws:sagemaker:{self.region}:{self.account}:pipeline/*"
-        #                     ],
-        #                 )
-        #             ]
-        #         )
-        #     ],
-        # )
+
         # Create the bucket to store the offline store
         offline_bucket = s3.Bucket(
             self,
             "Sagemaker-FeatureStoreOfflineBucket",
             removal_policy=cdk.RemovalPolicy.DESTROY,
             auto_delete_objects=True,
-            bucket_name=f"sagemaker-{project_id}-fg-{uuid4().hex[:7]}",
+            bucket_name=f"sagemaker-{project_id}-fg-{cdk.Aws.ACCOUNT_ID}",
         )
         # offline_bucket.grant_read_write(role)
 
@@ -102,7 +73,9 @@ class FeatureIngestionStack(cdk.Stack):
                 file_path=k, bucket_name=offline_bucket.bucket_name
             )
 
+            fg_configuration["feature_group_name"] = f"{project_name}-{fg_configuration['feature_group_name']}"
             fg_configuration["tags"] = fg_configuration["tags"] + tags
+            logger.info(fg_configuration)
             sagemaker.CfnFeatureGroup(
                 self,
                 f"FeatureGroup{fg_configuration['feature_group_name']}",
@@ -118,6 +91,12 @@ class FeatureIngestionStack(cdk.Stack):
 
             pipeline_name = f"{project_name}-{pipeline_props['pipeline_name']}"
             pipeline_conf = pipeline_props["pipeline_configuration"]
+
+            for k, o in pipeline_conf.items():
+                if "feature_group_name" in k:
+                    pipeline_conf[k] = f"{project_name}-{o}"
+
+
             pipeline_definition = generate_pipeline_definition(
                 role=sagemaker_execution_role_arn,
                 region=os.getenv("AWS_REGION"),

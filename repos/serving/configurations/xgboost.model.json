@@ -1,6 +1,6 @@
 { 
     "model_name": "xgboost",
-    "model_package_group_name": "xgboost",
+    "model_package_group_name": "fraud-classification-xgboost",
     "features_names": [
         "incident_severity",
         "num_vehicles_involved",

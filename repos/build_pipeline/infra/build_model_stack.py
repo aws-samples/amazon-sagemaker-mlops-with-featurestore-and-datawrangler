@@ -85,6 +85,12 @@ class BuildModelStack(cdk.Stack):
                 fn.grant_invoke(sagemaker_execution_role)
 
             pipeline_conf = pipeline_props["pipeline_configuration"]
+
+            for k, o in pipeline_conf.items():
+                if "_fg_name" in k:
+                    pipeline_conf[k] = f"{project_name}-{o}"
+                if k == "model_package_group_name":
+                    pipeline_conf[k] = f"{project_name}-{o}"
             try:
                 logger.info(f"Generating pipeline definition for {pipeline_name}")
                 pipeline_definition = generate_pipeline_definition(

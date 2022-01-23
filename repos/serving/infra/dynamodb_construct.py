@@ -1,17 +1,18 @@
 import logging
 import os
 
+import aws_cdk as cdk
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_glue as glue
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_lambda_event_sources as lambda_event_sources
-from aws_cdk import aws_lambda_python as lambda_python
+from aws_cdk import aws_lambda_python_alpha as lambda_python
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_sqs as sqs
 from aws_cdk import aws_stepfunctions as sfn
 from aws_cdk import aws_stepfunctions_tasks as sfn_tasks
-from aws_cdk import core as cdk
+from constructs import Construct
 
 from infra.serving_stack_utils import upload_file_to_bucket
 
@@ -29,10 +30,10 @@ api_gateway_role_arn = os.getenv("API_GATEWAY_ROLE_ARN")
 lambda_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 
 
-class GlueDynamoDb(cdk.Construct):
+class GlueDynamoDb(Construct):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         callback_queue: sqs.Queue,
         model_name: str,

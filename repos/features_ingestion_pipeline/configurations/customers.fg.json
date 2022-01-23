@@ -92,8 +92,8 @@
   "Description": "Customers Feature Group",
   "Tags": [
     {
-      "Key": "dev",
-      "Value": "true"
+      "Key": "stage",
+      "Value": "DEV"
     }
   ]
 }

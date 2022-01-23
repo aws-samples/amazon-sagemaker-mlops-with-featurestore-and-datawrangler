@@ -1,16 +1,17 @@
 import logging
 import os
 
+import aws_cdk as cdk
 from aws_cdk import aws_apigateway as apigateway
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_lambda_python as lambda_python
+from aws_cdk import aws_lambda_python_alpha as lambda_python
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_sagemaker as sagemaker
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sqs as sqs
 from aws_cdk import aws_ssm as ssm
-from aws_cdk import core as cdk
+from constructs import Construct
 
 from infra.dynamodb_construct import GlueDynamoDb
 from infra.sm_pipeline_utils import generate_pipeline_definition
@@ -30,10 +31,10 @@ tags = [
     cdk.CfnTag(key="sagemaker:project-id", value=project_id),
     cdk.CfnTag(key="sagemaker:project-name", value=project_name),
 ]
-class BatchTransform(cdk.Construct):
+class BatchTransform(Construct):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         id: str,
         sagemaker_execution_role: iam.Role,
         project_bucket: s3.Bucket,
@@ -89,6 +90,9 @@ class BatchTransform(cdk.Construct):
         callback_queue.grant_send_messages(sagemaker_execution_role)
 
         pipeline_conf = pipeline_props["pipeline_configuration"]
+        for k, o in pipeline_conf.items():
+            if "_fg_name" in k:
+                pipeline_conf[k] = f"{project_name}-{o}"
         pipeline_conf["datafreshness_func_arn"] = data_check_lambda.function_arn
         pipeline_conf["queue_url"] = callback_queue.queue_url
         pipeline_conf["model_package_group_name"] = model_package_group_name
