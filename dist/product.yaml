@@ -18,10 +18,6 @@
       "Type": "String",
       "AllowedPattern": "^arn:aws[a-z\\-]*:iam::\\d{12}:role/?[a-zA-Z_0-9+=,.@\\-_/]+$",
       "Description": "Amazon SageMaker User Execution Role to run the Demo walk-through."
-    },
-    "MLOpsProjectSeedBucketNameParameterBEE62386": {
-      "Type": "AWS::SSM::Parameter::Value<String>",
-      "Default": "/MLOpsDemoSCProjectStack/SeedBucketName"
     }
   },
   "Resources": {
@@ -866,9 +862,9 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+              "Fn::ImportValue": "MLOpsDemo-SeedBucketName-f5e74ee2"
             },
-            "Key": "1bb6cd9269f97b9bd4207e47013938c94357dfa0c7ef60eefcbf2286c9efc3b0.zip"
+            "Key": "serving.zip"
           }
         },
         "Tags": [
@@ -1772,9 +1768,9 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+              "Fn::ImportValue": "MLOpsDemo-SeedBucketName-f5e74ee2"
             },
-            "Key": "e729ac836327d15ab846a74c50ee2b43d1db2360ad16fbf6e46ba30cd7ead826.zip"
+            "Key": "features_ingestion_pipeline.zip"
           }
         },
         "Tags": [
@@ -2678,9 +2674,9 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+              "Fn::ImportValue": "MLOpsDemo-SeedBucketName-f5e74ee2"
             },
-            "Key": "6c46de7d2365725274db89fd13c329faae7b0b54b44be9e6136e64ca3da94495.zip"
+            "Key": "build_pipeline.zip"
           }
         },
         "Tags": [
@@ -3387,9 +3383,9 @@
           "BranchName": "main",
           "S3": {
             "Bucket": {
-              "Ref": "MLOpsProjectSeedBucketNameParameterBEE62386"
+              "Fn::ImportValue": "MLOpsDemo-SeedBucketName-f5e74ee2"
             },
-            "Key": "24df0f806c8fa639112c8e5583bce88816caa067cf9cd5a60c063989a78a7ead.zip"
+            "Key": "demo-workspace.zip"
           }
         },
         "Tags": [

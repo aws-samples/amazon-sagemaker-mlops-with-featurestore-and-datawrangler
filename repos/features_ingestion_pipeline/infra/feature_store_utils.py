@@ -49,16 +49,6 @@ def prepare_features_definitions(
 def get_fg_conf(file_path: Union[str, Path], bucket_name: str = None) -> dict:
     with open(file_path, "r") as f:
         f_list = json.load(f)
-    # offline_conf = None
-
-    # return dict(
-    #     event_time_feature_name=f_list["event_time_feature_name"],
-    #     record_identifier_feature_name=f_list["record_identifier_feature_name"],
-    #     feature_group_name=f_list["feature_group_name"],
-    #     online_store_config=f_list["online_store_config"],
-    #     offline_store_config=offline_conf,
-    #     feature_definitions=prepare_features_definitions(f_list["column_schemas"]),
-    # )
     f_list = {pascal2snake(k): v for k, v in f_list.items()}
     f_list["feature_definitions"] = prepare_features_definitions(
         f_list["feature_definitions"]
@@ -72,9 +62,10 @@ def get_fg_conf(file_path: Union[str, Path], bucket_name: str = None) -> dict:
         f_list["tags"] = [
             CfnTag(**{pascal2snake(j): o for j, o in k.keys()})
             for k in f_list["tags"]
-            if k["Key"] != "dev"
+            if (k["Key"].lower() == "stage") & (k["Value"].lower() != "dev")
         ]
     except:
+        logger.exception("Something went wrong")
         pass
     return f_list
 
