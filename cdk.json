@@ -1,7 +1,7 @@
 {
   "app": "python3 app.py",
   "context": {
-    "no-artifacts": false
+    "NoArtifacts": false
   },
   "versionReporting": false,
   "requireApproval": "never"

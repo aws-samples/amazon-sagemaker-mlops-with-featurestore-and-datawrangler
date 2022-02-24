@@ -6,7 +6,6 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_lambda_event_sources as lambda_event_sources
 from aws_cdk import aws_s3 as s3
-from aws_cdk import aws_ssm as ssm
 from aws_cdk import aws_sns as sns
 from constructs import Construct
 
@@ -32,8 +31,6 @@ class MlopsFeaturestoreStack(Stack):
         construct_id: str,
         code_assets: dict,
         demo_asset,
-        ssm_parameter_seed_bucket_name: str,
-        sm_studio_user_role_arn: str = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -44,7 +41,7 @@ class MlopsFeaturestoreStack(Stack):
             type="String",
             description="The name of the SageMaker project.",
             min_length=1,
-            max_length=16,
+            max_length=22,
             default="MLOpsDemo",
         )
         project_id = CfnParameter(
@@ -57,22 +54,32 @@ class MlopsFeaturestoreStack(Stack):
             default="mlopsdemo-id",
         )
 
-        sm_studio_user_role_arn = cdk.CfnParameter(
-            self,
-            "DemoSMSUserRole",
-            type="String",
-            description="Amazon SageMaker User Execution Role to run the Demo walk-through.",
-            default=sm_studio_user_role_arn,
-            allowed_pattern="^arn:aws[a-z\-]*:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+$",
-        )
-
         project_name = project_name.value_as_string
         project_id = project_id.value_as_string
 
+        sm_studio_user_role_name = cdk.Fn.import_value("MLOpsDemo-RoleName-f5e74ee2")
+        sm_studio_user_role_no_path_arn = f"arn:aws:iam::{self.account}:role/{sm_studio_user_role_name}"
+        sm_studio_user_role_no_path = iam.Role.from_role_arn(
+            self,
+            "SMSUserRoleNoPath",
+            role_arn=sm_studio_user_role_no_path_arn,
+        )
+        sm_studio_user_role_no_path.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=["ssm:GetParameter"],
+                resources=[
+                    self.format_arn(
+                        service="ssm",
+                        resource="parameter",
+                        resource_name="sagemaker*",
+                    ),
+                ],
+            )
+        )
         sm_studio_user_role = iam.Role.from_role_arn(
             self,
             "SMSUserRole",
-            role_arn=sm_studio_user_role_arn.value_as_string,
+            role_arn=cdk.Fn.import_value("MLOpsDemo-RoleArn-f5e74ee2"),
         )
 
         MlopsFeaturestoreConstruct(
@@ -81,7 +88,6 @@ class MlopsFeaturestoreStack(Stack):
             sm_studio_user_role=sm_studio_user_role,
             project_name=project_name,
             project_id=project_id,
-            ssm_parameter_seed_bucket_name=ssm_parameter_seed_bucket_name,
             code_assets=code_assets,
             demo_asset=demo_asset,
         )
@@ -95,7 +101,6 @@ class MlopsFeaturestoreConstruct(Construct):
         sm_studio_user_role: iam.Role,
         project_name: str = "MLOpsDemo",
         project_id: str = "mlopsdemo-id",
-        ssm_parameter_seed_bucket_name: str = None,
         code_assets: dict = None,
         demo_asset=None,
         debug_mode: bool = False,
@@ -142,7 +147,6 @@ class MlopsFeaturestoreConstruct(Construct):
             display_name=f"{project_name} CI/CD notifications",
             topic_name=f"sagemaker-{project_id}-cicd-topic",
         )
-
         cicd_topic.grant_publish(products_use_role)
 
         with open("lambdas/functions/auto_approval/lambda.py", encoding="utf8") as fp:
@@ -175,13 +179,7 @@ class MlopsFeaturestoreConstruct(Construct):
                 # filter_policy=
             )
         )
-
-        seed_bucket_name = ssm.StringParameter.from_string_parameter_attributes(
-            self,
-            "SeedBucketName",
-            parameter_name=ssm_parameter_seed_bucket_name,
-            simple_name=False,
-        ).string_value
+        seed_bucket_name = cdk.Fn.import_value("MLOpsDemo-SeedBucketName-f5e74ee2")
 
         cicd_dict = {
             name: cicd_construct(

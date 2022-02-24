@@ -1,6 +1,7 @@
 # Operationalize a Machine Learning model with Amazon SageMaker Featurestore and Amazon SageMaker DataWrangler Using CDK
 
 - [Objective](#objective)
+- [QuickStart](#quickstart)
 - [Environment](#environment)
   - [CDK](#cdk)
   - [Python](#python)
@@ -26,6 +27,12 @@ The goal of the project is to realize a demonstration of an end-to-end machine l
 Each pipeline is deployed by CodePipeline, based on its own repository.  
 The entire workflow is described by a single CFN template.  
 The cloudformation template serves as the basis for a custom SageMaker Project.   
+
+
+## QuickStart
+A CloudFormation template is available [here](/dist/service_catalog.template.yaml). After downloading the template on your local machine, you can deploy it following the indications in [Creating a stack on the AWS CloudFormation console](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).  
+The deployment of this sample will create resources outside of AWS free tier. Please review the [Running Costs](#running-costs section of this document.
+
 
 
 ## Environment

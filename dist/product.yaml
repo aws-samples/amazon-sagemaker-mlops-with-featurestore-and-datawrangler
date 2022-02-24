@@ -4,7 +4,7 @@
       "Type": "String",
       "Default": "MLOpsDemo",
       "Description": "The name of the SageMaker project.",
-      "MaxLength": 16,
+      "MaxLength": 22,
       "MinLength": 1
     },
     "SageMakerProjectId": {
@@ -13,14 +13,52 @@
       "Description": "Service generated Id of the project.",
       "MaxLength": 16,
       "MinLength": 1
-    },
-    "DemoSMSUserRole": {
-      "Type": "String",
-      "AllowedPattern": "^arn:aws[a-z\\-]*:iam::\\d{12}:role/?[a-zA-Z_0-9+=,.@\\-_/]+$",
-      "Description": "Amazon SageMaker User Execution Role to run the Demo walk-through."
     }
   },
   "Resources": {
+    "SMSUserRoleNoPathPolicyD7420A46": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "ssm:GetParameter",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":ssm:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":parameter/sagemaker*"
+                  ]
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "SMSUserRoleNoPathPolicyD7420A46",
+        "Roles": [
+          {
+            "Fn::ImportValue": "MLOpsDemo-RoleName-f5e74ee2"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "SynthStage/MLOpsCfnStack/SMSUserRoleNoPath/Policy/Resource"
+      }
+    },
     "MLOpsProjectProductsUseRolePolicyFC575010": {
       "Type": "AWS::IAM::Policy",
       "Properties": {
@@ -1183,7 +1221,7 @@
               "Name": "SAGEMAKER_STUDIO_USER_ROLE_ARN",
               "Type": "PLAINTEXT",
               "Value": {
-                "Ref": "DemoSMSUserRole"
+                "Fn::ImportValue": "MLOpsDemo-RoleArn-f5e74ee2"
               }
             },
             {
@@ -1386,7 +1424,7 @@
               "Name": "SAGEMAKER_STUDIO_USER_ROLE_ARN",
               "Type": "PLAINTEXT",
               "Value": {
-                "Ref": "DemoSMSUserRole"
+                "Fn::ImportValue": "MLOpsDemo-RoleArn-f5e74ee2"
               }
             },
             {
@@ -2089,7 +2127,7 @@
               "Name": "SAGEMAKER_STUDIO_USER_ROLE_ARN",
               "Type": "PLAINTEXT",
               "Value": {
-                "Ref": "DemoSMSUserRole"
+                "Fn::ImportValue": "MLOpsDemo-RoleArn-f5e74ee2"
               }
             },
             {
@@ -2292,7 +2330,7 @@
               "Name": "SAGEMAKER_STUDIO_USER_ROLE_ARN",
               "Type": "PLAINTEXT",
               "Value": {
-                "Ref": "DemoSMSUserRole"
+                "Fn::ImportValue": "MLOpsDemo-RoleArn-f5e74ee2"
               }
             },
             {
@@ -2995,7 +3033,7 @@
               "Name": "SAGEMAKER_STUDIO_USER_ROLE_ARN",
               "Type": "PLAINTEXT",
               "Value": {
-                "Ref": "DemoSMSUserRole"
+                "Fn::ImportValue": "MLOpsDemo-RoleArn-f5e74ee2"
               }
             },
             {
@@ -3198,7 +3236,7 @@
               "Name": "SAGEMAKER_STUDIO_USER_ROLE_ARN",
               "Type": "PLAINTEXT",
               "Value": {
-                "Ref": "DemoSMSUserRole"
+                "Fn::ImportValue": "MLOpsDemo-RoleArn-f5e74ee2"
               }
             },
             {
