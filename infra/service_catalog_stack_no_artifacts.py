@@ -1,24 +1,31 @@
+import logging
+import shutil
 from pathlib import Path
 
 from aws_cdk import (
     ArnFormat,
-    CfnOutput,
     CfnParameter,
+    CfnOutput,
+    CustomResource,
     Duration,
+    RemovalPolicy,
     Stack,
     Tags,
-    CustomResource,
 )
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_servicecatalog_alpha as servicecatalog
+from cfn_flip import to_yaml
 from constructs import Construct
 
 from infra.mlops_featurestore_construct import MlopsFeaturestoreStack
-from infra.utils import code_asset_upload, generate_template, snake2pascal
+from infra.utils import generate_template, snake2pascal
+
+logger = logging.getLogger(__name__)
 
 
-class ServiceCatalogStack(Stack):
+class ServiceCatalogStackNoArtifacts(Stack):
     def __init__(
         self,
         scope: Construct,
@@ -91,26 +98,89 @@ class ServiceCatalogStack(Stack):
             products_use_role_arn,
         )
 
+        seed_bucket = s3.Bucket(
+            self,
+            "SeedBucket",
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+        seed_bucket.grant_read(products_launch_role)
+        CfnOutput(
+            self,
+            "SeedBucketNameOutput",
+            value=seed_bucket.bucket_name,
+            export_name="MLOpsDemo-SeedBucketName-f5e74ee2",
+        )
+
+        # Lambda Fn to download the seed code for all the repos and the product template from the GitHub repository
+        powertools_lambda_layer = lambda_.LayerVersion.from_layer_version_arn(
+            self,
+            "AwsLambdaPowerToolsLayer",
+            layer_version_arn=self.format_arn(
+                account="017000801446",
+                service="lambda",
+                resource="layer",
+                resource_name="AWSLambdaPowertoolsPython:4",
+                arn_format=ArnFormat.COLON_RESOURCE_NAME,
+            ),
+        )
+        git_layer = lambda_.LayerVersion.from_layer_version_arn(
+            self,
+            "GitLayer",
+            layer_version_arn=self.format_arn(
+                account="553035198032",
+                service="lambda",
+                resource="layer",
+                resource_name="git-lambda2:8",
+                arn_format=ArnFormat.COLON_RESOURCE_NAME,
+            ),
+        )
+
+        # Read the lambda fn code into memory to add it inline in the template and avoid creating an artifact
+        with Path("lambdas/functions/clone_seeds/lambda_main.py").open() as f:
+            seed_lambda_code = f.read()
+
+        seed_lambda = lambda_.Function(
+            self,
+            "SeedLambda",
+            code=lambda_.Code.from_inline(seed_lambda_code),
+            handler="index.lambda_handler",
+            runtime=lambda_.Runtime.PYTHON_3_9,
+            environment=dict(SeedBucket=seed_bucket.bucket_name),
+            timeout=Duration.seconds(100),
+            layers=[
+                powertools_lambda_layer,
+                git_layer,
+            ],
+        )
+        seed_bucket.grant_write(seed_lambda)
+
+        seed_paths = [k.as_posix() for k in Path("repos").glob("*") if k.is_dir()]
+        demo_path = "demo-workspace"
+
         code_assets = {
             f"{snake2pascal(k.name)}": dict(
-                s3_object_key=code_asset_upload(
-                    self, k, products_launch_role
-                ).s3_object_key,
+                s3_object_key=k.name + ".zip",
             )
             for k in Path("repos").glob("*")
             if k.is_dir()
         }
-
-        demo_asset_o = code_asset_upload(
-            self, Path("demo-workspace"), products_launch_role
+        demo_asset = dict(
+            s3_object_key="demo-workspace.zip",
         )
-        demo_asset = dict(s3_object_key=demo_asset_o.s3_object_key)
 
-        CfnOutput(
+        cr = CustomResource(
             self,
-            "SeedBucketNameOutput",
-            value=demo_asset_o.s3_bucket_name,
-            export_name="MLOpsDemo-SeedBucketName-f5e74ee2",
+            f"CrCloneSeeds",
+            service_token=seed_lambda.function_arn,
+            properties=dict(
+                GitRepository="https://github.com/aws-samples/amazon-sagemaker-mlops-with-featurestore-and-datawrangler",
+                Branch="artifact-less_deployment",
+                SeedPaths=seed_paths + [demo_path],
+                TemplatePath="dist/product.yaml",
+            ),
+        )
+        cloud_formation_template = servicecatalog.CloudFormationTemplate.from_url(
+            seed_bucket.virtual_hosted_url_for_object(key="product.yaml")
         )
 
         product_template = generate_template(
@@ -120,6 +190,15 @@ class ServiceCatalogStack(Stack):
             demo_asset=demo_asset,
         )
 
+        Path("dist").mkdir(exist_ok=True)
+        with Path(product_template).open() as j, Path("dist/product.yaml").open(
+            "w"
+        ) as y:
+            y.write(to_yaml(j.read()))
+
+        product_template = shutil.copy2(product_template, "dist/product.yaml")
+
+        # Service Catalog section
         portfolio = servicecatalog.Portfolio(
             self,
             "Portfolio",
@@ -135,9 +214,7 @@ class ServiceCatalogStack(Stack):
             product_name="Amazon SageMaker MLOps Demo",
             product_versions=[
                 servicecatalog.CloudFormationProductVersion(
-                    cloud_formation_template=servicecatalog.CloudFormationTemplate.from_asset(
-                        product_template
-                    ),
+                    cloud_formation_template=cloud_formation_template,
                     product_version_name=product_version.value_as_string,
                 )
             ],
@@ -147,6 +224,7 @@ class ServiceCatalogStack(Stack):
             "and Deployment pipelines",
         )
         Tags.of(product).add(key="sagemaker:studio-visibility", value="true")
+        product.node.add_dependency(cr)
 
         portfolio.add_product(product)
         studio_user_role = iam.Role.from_role_arn(
@@ -154,19 +232,21 @@ class ServiceCatalogStack(Stack):
             "execution_role_arn",
             role_arn=studio_user_role_arn.value_as_string,
         )
+        portfolio.give_access_to_role(studio_user_role)
+        portfolio.set_launch_role(product, products_launch_role)
 
-        # Lambda Fn to download the seed code for all the repos and the product template from the GitHub repository
-        powertools_lambda_layer = lambda_.LayerVersion.from_layer_version_arn(
-            self,
-            "AwsLambdaPowerToolsLayer",
-            layer_version_arn=self.format_arn(
-                account="017000801446",
-                service="lambda",
-                resource="layer",
-                resource_name="AWSLambdaPowertoolsPython:4",
-                arn_format=ArnFormat.COLON_RESOURCE_NAME,
-            ),
+        launch_role_policies(products_launch_role, self)
+        products_launch_role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy",
+                    "iam:getRolePolicy",
+                ],
+                resources=[products_use_role.role_arn],
+            )
         )
+
         with Path("lambdas/functions/role_name/lambda_main.py").open() as f:
             seed_lambda_code = f.read()
 
@@ -181,7 +261,7 @@ class ServiceCatalogStack(Stack):
                 powertools_lambda_layer,
             ],
         )
-        cr = CustomResource(
+        cr2 = CustomResource(
             self,
             f"CrRoleSplitLambda",
             service_token=role_split_lambda.function_arn,
@@ -193,7 +273,7 @@ class ServiceCatalogStack(Stack):
         CfnOutput(
             self,
             "RoleNameOutput",
-            value=cr.get_att_string("RoleName"),
+            value=cr2.get_att_string("RoleName"),
             export_name="MLOpsDemo-RoleName-f5e74ee2",
         )
         CfnOutput(
@@ -213,19 +293,8 @@ class ServiceCatalogStack(Stack):
             )
         )
 
-        portfolio.give_access_to_role(studio_user_role)
-        portfolio.set_launch_role(product, products_launch_role)
-        launch_role_policies(products_launch_role, self)
-        products_launch_role.add_to_principal_policy(
-            iam.PolicyStatement(
-                actions=[
-                    "iam:PutRolePolicy",
-                    "iam:DeleteRolePolicy",
-                    "iam:getRolePolicy",
-                ],
-                resources=[products_use_role.role_arn],
-            )
-        )
+
+
 
 
 def launch_role_policies(target_role: iam.Role, stack: Stack):

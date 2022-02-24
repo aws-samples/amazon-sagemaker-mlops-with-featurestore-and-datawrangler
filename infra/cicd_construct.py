@@ -2,7 +2,6 @@ from typing import Dict
 
 import aws_cdk as cdk
 from aws_cdk import aws_codebuild as codebuild
-# from aws_cdk import aws_codecommit as codecommit
 from aws_cdk import aws_codepipeline as codepipeline
 from aws_cdk import aws_codepipeline_actions as codepipeline_actions
 from aws_cdk import aws_events as events
@@ -63,7 +62,7 @@ class cicd_construct(Construct):
 
         repo = Repository(
             scope,
-            f"sagemaker{construct_id}Repository",
+            f"Sagemaker{construct_id}Repository",
             repository_name=f"sagemaker-{project_name}-{construct_id}",
             code_bucket=seed_bucket_name,
             code_key=seed_object_key,

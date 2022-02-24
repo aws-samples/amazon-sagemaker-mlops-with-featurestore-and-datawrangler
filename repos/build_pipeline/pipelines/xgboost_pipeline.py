@@ -73,9 +73,9 @@ def get_pipeline(
         name="BaselineInstanceCount",
         default_value=1,
     )
-    model_threshold_auc = ParameterString(
+    model_threshold_auc = ParameterFloat(
         name="ModelMinAcceptableAUC",
-        default_value="0.75",
+        default_value=0.75,
     )
     model_approval_status = ParameterString(
         name="ModelApprovalStatus",

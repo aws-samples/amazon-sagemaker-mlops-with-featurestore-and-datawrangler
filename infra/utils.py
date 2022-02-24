@@ -62,7 +62,7 @@ class Repository(object):
         )
 
 
-def code_asset_upload(stack: cdk.Stack, dir_path: Path, read_role: Role):
+def code_asset_upload(stack: cdk.Stack, dir_path: Path, read_role: Role)-> Asset:
     # this is a hack, somehow the CDK generated asset is corrupted
     archive = shutil.make_archive(
         base_name=Path("cdk.out") / dir_path.name,

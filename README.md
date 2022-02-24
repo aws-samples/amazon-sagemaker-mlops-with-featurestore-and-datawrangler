@@ -1,6 +1,8 @@
 # Operationalize a Machine Learning model with Amazon SageMaker Featurestore and Amazon SageMaker DataWrangler Using CDK
 
 - [Objective](#objective)
+- [AWS Innovate - AI/ML Edition 2022](#aws-innovate---aiml-edition-2022)
+- [QuickStart](#quickstart)
 - [Environment](#environment)
   - [CDK](#cdk)
   - [Python](#python)
@@ -26,6 +28,23 @@ The goal of the project is to realize a demonstration of an end-to-end machine l
 Each pipeline is deployed by CodePipeline, based on its own repository.  
 The entire workflow is described by a single CFN template.  
 The cloudformation template serves as the basis for a custom SageMaker Project.   
+
+
+## AWS Innovate - AI/ML Edition 2022
+Let us know what you thought of this lab and how we can improve the experience for you in the future by completing this poll. Participants who complete the surveys from AWS Innovate - AI/ML Edition will receive a gift code for USD25 in AWS credits (see notes 1, 2 & 3 below).  
+AWS credits will be sent via email by 31 March, 2022.
+ 
+Note: *Only registrants of AWS Innovate - AI/ML Edition who complete the surveys will receive a gift code for USD25 in AWS credits via email.*
+ 1. AWS Promotional Credits Terms and conditions apply: https://aws.amazon.com/awscredits/ 
+2. Limited to 1 x USD25 AWS credits per participant.
+3. Participants will be required to provide their business email addresses to receive the gift code for AWS credits.
+
+for queries about the AWS Innovate - AI/ML Edition and credit codes, please contact aws-apj-marketing@amazon.com
+
+## QuickStart
+A CloudFormation template is available [here](/dist/service_catalog.template.yaml). After downloading the template on your local machine, you can deploy it following the indications in [Creating a stack on the AWS CloudFormation console](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).  
+The deployment of this sample will create resources outside of AWS free tier. Please review the [Running Costs](#running-costs section of this document.
+
 
 
 ## Environment

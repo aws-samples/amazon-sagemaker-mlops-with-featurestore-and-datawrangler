@@ -1,16 +1,17 @@
 import logging
 import os
 
+import aws_cdk as cdk
 import boto3
 import sagemaker as sm
 from aws_cdk import aws_apigateway as apigateway
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_lambda_python as lambda_python
+from aws_cdk import aws_lambda_python_alpha as lambda_python
 from aws_cdk import aws_sagemaker as sagemaker
 from aws_cdk import aws_ssm as ssm
-from aws_cdk import core as cdk
+from constructs import Construct
 
 logger = logging.getLogger()
 
@@ -19,61 +20,9 @@ project_name = os.getenv("SAGEMAKER_PROJECT_NAME")
 project_id = os.getenv("SAGEMAKER_PROJECT_ID")
 execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
 region = os.getenv("AWS_REGION")
-sm_client = boto3.client("sagemaker")
+sm_client = boto3.client("sagemaker", region_name=region)
 lambda_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 
-
-def get_pipeline_execution_arn(model_package_arn: str):
-    """Geturns the execution arn for the latest approved model package
-
-    Args:
-        model_package_arn: The arn of the model package
-
-    Returns:
-        The arn of the sagemaker pipeline that created the model package.
-    """
-
-    artifact_arn = sm_client.list_artifacts(SourceUri=model_package_arn)[
-        "ArtifactSummaries"
-    ][0]["ArtifactArn"]
-    return sm_client.describe_artifact(ArtifactArn=artifact_arn)["MetadataProperties"][
-        "GeneratedBy"
-    ]
-
-
-def get_processing_output(
-    pipeline_execution_arn: str,
-    step_name: str = "BaselineJob",
-    output_name: str = "monitoring_output",
- ):
-    """Filters the model packages based on a list of model package versions.
-
-    Args:
-        pipeline_execution_arn: The pipeline execution arn
-        step_name: The optional processing step name
-        output_name: The output value to pick from the processing job
-
-    Returns:
-        The outputs from the processing job
-    """
-
-    steps = sm_client.list_pipeline_execution_steps(
-        PipelineExecutionArn=pipeline_execution_arn
-    )["PipelineExecutionSteps"]
-
-    processing_job_arn = [
-        s["Metadata"]["ProcessingJob"]["Arn"]
-        for s in steps
-        if s["StepName"] == step_name
-    ][0]
-
-    processing_job_name = processing_job_arn.split("/")[-1]
-    outputs = sm_client.describe_processing_job(ProcessingJobName=processing_job_name)[
-        "ProcessingOutputConfig"
-    ]["Outputs"]
-    return [o["S3Output"]["S3Uri"] for o in outputs if o["OutputName"] == output_name][
-        0
-    ]
 
 
 def get_model_package_arn(model_package_group_name: str):
@@ -85,10 +34,10 @@ def get_model_package_arn(model_package_group_name: str):
     )["ModelPackageSummaryList"][0]["ModelPackageArn"]
 
 
-class ModelEndpointConstruct(cdk.Construct):
+class ModelEndpointConstruct(Construct):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         model_package_group_name: str,
         endpoint_conf: dict,
@@ -103,6 +52,10 @@ class ModelEndpointConstruct(cdk.Construct):
         endpoint_name = f"{project_name}-{endpoint_conf['endpoint_name']}"
         lambda_entry_point = endpoint_conf["lambda_entry_point"]
         lambda_environment = endpoint_conf["lambda_environment"]
+        for k, o in lambda_environment.items():
+                if "_fg_name" in k:
+                    lambda_environment[k] = f"{project_name}-{o}"
+
         prefix = endpoint_conf["prefix"]
 
         schedule_config = endpoint_conf["schedule_config"]
@@ -242,18 +195,22 @@ class ModelEndpointConstruct(cdk.Construct):
             logger.exception("No suitable model version found")
 
         try:
-            pipeline_execution_arn = get_pipeline_execution_arn(model_package_arn)
-            baseline_uri = get_processing_output(pipeline_execution_arn)
+            # pipeline_execution_arn = get_pipeline_execution_arn(model_package_arn)
+
+            # baseline_uri = get_processing_output(pipeline_execution_arn)
+            drift_check_baselines = sm_client.describe_model_package(ModelPackageName=model_package_arn)['DriftCheckBaselines']
+            data_quality_baseline = drift_check_baselines['ModelDataQuality']
+
             schedule_name = f"{project_id}-{endpoint_name}-schedule"
 
             monitoring_schedule_config = sagemaker.CfnMonitoringSchedule.MonitoringScheduleConfigProperty(
                 monitoring_job_definition=sagemaker.CfnMonitoringSchedule.MonitoringJobDefinitionProperty(
                     baseline_config=sagemaker.CfnMonitoringSchedule.BaselineConfigProperty(
                         constraints_resource=sagemaker.CfnMonitoringSchedule.ConstraintsResourceProperty(
-                            s3_uri=f"{baseline_uri}/constraints.json",
+                            s3_uri=data_quality_baseline['Statistics']['S3Uri'],
                         ),
                         statistics_resource=sagemaker.CfnMonitoringSchedule.StatisticsResourceProperty(
-                            s3_uri=f"{baseline_uri}/statistics.json",
+                            s3_uri=data_quality_baseline['Constraints']['S3Uri'],
                         ),
                     ),
                     monitoring_app_specification=sagemaker.CfnMonitoringSchedule.MonitoringAppSpecificationProperty(

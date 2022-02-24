@@ -22,8 +22,8 @@ def lambda_handler(event, context):
 
     return {
         "statusCode": 200,
-        "body": json.dumps(f"{metric_name} extracted"),
-        "metric_value": json.dumps(metrics['binary_classification_metrics'][metric_name]['value'])
+        "body": json.dumps(f"Extracted {metric_name}"),
+        "metric_value": metrics['binary_classification_metrics'][metric_name]['value']
     }
 
 def split_s3_path(s3_path):

@@ -2,7 +2,7 @@
 from pathlib import Path
 
 from aws_cdk import aws_iam as iam
-from aws_cdk import core as cdk
+import aws_cdk as cdk
 
 from infra.mlops_featurestore_construct import MlopsFeaturestoreConstruct
 from infra.utils import code_asset_upload, get_default_sagemaker_role, snake2pascal

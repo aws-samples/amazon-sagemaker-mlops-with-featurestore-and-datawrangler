@@ -1,12 +1,13 @@
 import os
 
+import aws_cdk as cdk
 from aws_cdk import aws_codepipeline as codepipeline
 from aws_cdk import aws_codepipeline_actions as codepipeline_actions
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as events_targets
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_ssm as ssm
-from aws_cdk import core as cdk
+from constructs import Construct
 
 project_bucket_name = os.getenv("PROJECT_BUCKET")
 execution_role_arn = os.getenv("SAGEMAKER_PIPELINE_ROLE_ARN")
@@ -16,10 +17,10 @@ pipeline_construct_id = os.getenv("CODEPIPELINE_CONSTRUCT_ID")
 events_role_arn = os.getenv("LAMBDA_ROLE_ARN")
 
 
-class Redeploy(cdk.Construct):
+class Redeploy(Construct):
     def __init__(
         self,
-        scope: cdk.Construct,
+        scope: Construct,
         construct_id: str,
         model_package_group_name: str,
         **kwargs,
@@ -39,20 +40,6 @@ class Redeploy(cdk.Construct):
         pipeline = codepipeline.Pipeline.from_pipeline_arn(
             self, "CodePipeline", pipeline_arn=codepipeline_arn
         )
-
-        # pipeline.add_stage(
-        #     placement=codepipeline.StagePlacement.right_before(
-        #         pipeline.stage("Deploy")
-        #     ),
-        #     stage_name="ManualApproval",
-        #     actions=[
-        #         codepipeline_actions.ManualApprovalAction(
-        #             action_name="ManualApproval",
-        #             # notification_topic=sns_topic,
-        #             role=pipeline.role,
-        #         )
-        #     ],
-        # )
 
         # Add deploy role to target the code pipeline when model package is approved
         events.Rule(
