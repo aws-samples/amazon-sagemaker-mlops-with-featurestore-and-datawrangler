@@ -3,18 +3,15 @@ import os
 
 import aws_cdk as cdk
 from aws_cdk import aws_dynamodb as dynamodb
-from aws_cdk import aws_glue as glue
+from aws_cdk import aws_glue_alpha as glue
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_lambda_event_sources as lambda_event_sources
 from aws_cdk import aws_lambda_python_alpha as lambda_python
-from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_sqs as sqs
 from aws_cdk import aws_stepfunctions as sfn
 from aws_cdk import aws_stepfunctions_tasks as sfn_tasks
 from constructs import Construct
-
-from infra.serving_stack_utils import upload_file_to_bucket
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -47,10 +44,6 @@ class GlueDynamoDb(Construct):
             self, "LambdaRole", role_arn=lambda_role_arn
         )
 
-        project_bucket = s3.Bucket.from_bucket_name(
-            self, "ProjectBucket", bucket_name=project_bucket_name
-        )
-
         logger.info("Create DynamoDB Table")
         table_ddb = dynamodb.Table(
             self,
@@ -66,7 +59,6 @@ class GlueDynamoDb(Construct):
 
         # IAM Role (Glue)
         logger.info("Update IAM Role (Glue Job)")
-
         glue_role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name(
                 "service-role/AWSGlueServiceRole"
@@ -95,25 +87,18 @@ class GlueDynamoDb(Construct):
         table_ddb.grant_read_data(self.function_read_ddb)
 
         # Glue
-        logger.info("Upload Glue Job script ...")
-        source_file_full_path = "./scripts/glue/load-ddb-table.py"
-        target_key_name_glue_job = "glue/scripts/load-ddb-table.py"
-        upload_file_to_bucket(
-            source_file_full_path, project_bucket_name, target_key_name_glue_job
-        )
-
         logger.info("Create Glue Job and attach the pre-created role")
-        glue_job = glue.CfnJob(
-            scope=self,
-            id=f"sagemaker-{project_id}-GlueJob",
-            name=f"sagemaker-{project_id}-GlueJob",
-            description="Glue Job to upload the result of Batch Transform to DynamoDB for low-latency serving",
-            role=glue_role.role_arn,
-            command=glue.CfnJob.JobCommandProperty(
-                name="glueetl",
-                python_version="3",
-                script_location=f"s3://{project_bucket_name}/glue/scripts/load-ddb-table.py",
+        glue_job = glue.Job(
+            self,
+            f"sagemaker-{project_id}-GlueJob",
+            job_name=f"sagemaker-{project_id}-GlueJob",
+            executable=glue.JobExecutable.python_etl(
+                glue_version=glue.GlueVersion.V3_0,
+                python_version=glue.PythonVersion.THREE,
+                script=glue.Code.from_asset(path="./scripts/glue/load-ddb-table.py"),
             ),
+            role=glue_role,
+            description="Glue Job to upload the result of Batch Transform to DynamoDB for low-latency serving",
             default_arguments={
                 "--job-bookmark-option": "job-bookmark-enable",
                 "--enable-metrics": "",
@@ -122,125 +107,60 @@ class GlueDynamoDb(Construct):
                 "--SOURCE_S3_BUCKET": project_bucket_name,
                 "--TABLE_HEADER_NAME": f"{index_name}, score",
             },
-            glue_version="3.0",
-            worker_type="Standard",
-            number_of_workers=2,
-            timeout=15,
-            max_retries=0,
-            execution_property=glue.CfnJob.ExecutionPropertyProperty(
-                max_concurrent_runs=3
+            worker_count=2,
+            worker_type=glue.WorkerType.STANDARD,
+            max_concurrent_runs=3,
+            timeout=cdk.Duration.minutes(15),
+        )
+
+        # STEP FUNCTION
+        start_glue_job = sfn_tasks.GlueStartJobRun(
+            self,
+            "StartGlueJobTask",
+            glue_job_name=glue_job.job_name,
+            integration_pattern=sfn.IntegrationPattern.RUN_JOB,
+            result_path="$.taskresult",
+            arguments=sfn.TaskInput.from_object(
+                {
+                    "--job-bookmark-option": "job-bookmark-enable",
+                    "--additional-python-modules": "pyarrow==2,awswrangler==2.9.0",
+                    "--TARGET_DDB_TABLE": table_ddb.table_name,
+                    "--S3_BUCKET": sfn.JsonPath.string_at("$.body.bucket"),
+                    "--S3_PREFIX_PROCESSED": sfn.JsonPath.string_at(
+                        "$.body.keysRawProc[0]"
+                    ),
+                }
             ),
         )
 
-        #### Lambda Functions for the Step Function
-        logger.info(
-            "Create AWS Lambda Python Function (Call Glue Job) > to be connected to a Step Function"
+        send_success = sfn_tasks.CallAwsService(
+            self,
+            "SendSuccess",
+            iam_resources=["sagemaker:SendPipelineExecutionStepSuccess"],
+            service="sagemaker",
+            action="sendPipelineExecutionStepSuccess",
+            parameters={"CallbackToken.$": "$.callbackToken"},
+        )
+        send_failure = sfn_tasks.CallAwsService(
+            self,
+            "SendFailure",
+            iam_resources=["sagemaker:SendPipelineExecutionStepFailure"],
+            service="sagemaker",
+            action="sendPipelineExecutionStepFailure",
+            parameters={"CallbackToken.$": "$.callbackToken"},
         )
 
-        lambda_role.add_to_principal_policy(
-            iam.PolicyStatement(
-                actions=["glue:StartJobRun"],
-                resources=[f"arn:aws:glue:{cdk.Aws.REGION}:{cdk.Aws.ACCOUNT_ID}:job/sagemaker-*"],
+        definition = start_glue_job.add_catch(
+            send_failure,
+            result_path="$.error-info",
+        ).next(
+            sfn.Choice(self, "Job successful?")
+            .when(
+                sfn.Condition.string_equals("$.taskresult.JobRunState", "SUCCEEDED"),
+                send_success,
             )
-        )
-
-        lambda_role.add_to_principal_policy(
-            iam.PolicyStatement(
-                actions=["glue:GetJobRun", "glue:GetJobRuns", "glue:GetJobs"],
-                resources=["*"],
-            )
-        )
-
-
-        function_sfn_job_exec = lambda_python.PythonFunction(
-            self,
-            "SFNJobExec",
-            function_name=f"sagemaker-{project_id}-SFNJobExec",
-            entry="lambdas/functions/processing-job-execution",
-            index="lambda_function.py",
-            handler="lambda_handler",
-            runtime=lambda_.Runtime.PYTHON_3_8,
-            timeout=cdk.Duration.minutes(15),
-            environment={},
-            role=lambda_role,
-        )
-
-        logger.info(
-            "Create AWS Lambda Python Function (Check Glue Job Status) > to be connected to a Step Function"
-        )
-        function_sfn_job_status_check = lambda_python.PythonFunction(
-            self,
-            "SFNJobStatusCheck",
-            function_name=f"sagemaker-{project_id}-SFNJobStatusCheck",
-            entry="lambdas/functions/processing-job-status-check",
-            index="lambda_function.py",
-            handler="lambda_handler",
-            runtime=lambda_.Runtime.PYTHON_3_8,
-            timeout=cdk.Duration.minutes(15),
-            environment={},
-            role=lambda_role,
-        )
-
-        ##################################################################################################################################################################
-        #########################                                                      STEP FUNCTIONS                                         ############################
-        ##################################################################################################################################################################
-        # Based on https://docs.aws.amazon.com/step-functions/latest/dg/sample-project-job-poller.html
-        #       https://docs.aws.amazon.com/cdk/api/latest/python/aws_cdk.aws_stepfunctions/README.html#example
-
-        logger.info("Step Function State Machine Activities ...")
-        logger.info("1\ Create Step Function tasks (steps) ")
-        logger.info("2\ Register steps to a Step Function definition")
-        logger.info("3\ Create a Step Function state machine using definition")
-
-        submit_job = sfn_tasks.LambdaInvoke(
-            self,
-            "Submit Job",
-            lambda_function=function_sfn_job_exec,
-            result_path="$.body.job",
-        )
-
-        wait_x = sfn.Wait(
-            self, "Wait", time=sfn.WaitTime.duration(cdk.Duration.seconds(15))
-        )
-
-        get_status = sfn_tasks.LambdaInvoke(
-            self,
-            "Get Job Status",
-            lambda_function=function_sfn_job_status_check,
-            result_path="$.body.job",
-        )
-
-        job_failed = sfn.Fail(
-            self,
-            "Job Failed",
-            cause="AWS Job Failed",
-            error="DescribeJob returned FAILED",
-        )
-
-        final_status = sfn_tasks.LambdaInvoke(
-            self,
-            "Get Final Job Status",
-            lambda_function=function_sfn_job_status_check,
-        )
-
-        definition = (
-            submit_job.next(wait_x)
-            .next(get_status)
-            .next(
-                sfn.Choice(self, "Job Complete?")
-                .when(
-                    sfn.Condition.string_equals(
-                        "$.body.job.Payload.jobDetails.jobStatus", "FAILED"
-                    ),
-                    job_failed,
-                )
-                .when(
-                    sfn.Condition.string_equals(
-                        "$.body.job.Payload.jobDetails.jobStatus", "SUCCEEDED"
-                    ),
-                    final_status,
-                )
-                .otherwise(wait_x)
+            .otherwise(
+                send_failure,
             )
         )
 
@@ -251,12 +171,11 @@ class GlueDynamoDb(Construct):
             definition=definition,
             timeout=cdk.Duration.minutes(15),
             role=iam.Role.from_role_arn(
-                self, "LambdaRoleImmutable", role_arn=lambda_role_arn, mutable=False
+                self,
+                "LambdaRoleImmutable",
+                role_arn=lambda_role_arn,
+                mutable=False,
             ),
-        )
-
-        logger.info(
-            "Create AWS Lambda Python Function (trigger step function) > to be connected to an SQS queue"
         )
 
         function_execute_sfn = lambda_python.PythonFunction(
@@ -267,10 +186,9 @@ class GlueDynamoDb(Construct):
             index="lambda_function.py",
             handler="lambda_handler",
             runtime=lambda_.Runtime.PYTHON_3_8,
-            timeout=cdk.Duration.seconds(100),
+            timeout=cdk.Duration.seconds(10),
             environment={
                 "state_machine_arn": statemachine.state_machine_arn,
-                "TARGET_GLUE_JOB": glue_job.name,
                 "TARGET_DDB_TABLE": table_ddb.table_name,
             },
             role=lambda_role,

@@ -347,7 +347,7 @@ Resources:
           - SeedLambda763BF61F
           - Arn
       GitRepository: https://github.com/aws-samples/amazon-sagemaker-mlops-with-featurestore-and-datawrangler
-      Branch: artifact-less_deployment
+      Branch: main
       SeedPaths:
         - repos/serving
         - repos/features_ingestion_pipeline

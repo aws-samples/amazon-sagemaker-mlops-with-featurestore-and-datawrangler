@@ -10,11 +10,10 @@ logger.setLevel(logging.INFO)
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 # Retrieve region where Lambda is being executed
-region_name = os.environ["AWS_REGION"]  # "ap-southeast-1"
+region_name = os.environ["AWS_REGION"]
 
 # Retrieve state machine ARN
 sm_arn = os.environ["state_machine_arn"]
-target_job = os.getenv("TARGET_GLUE_JOB")
 target_ddb = os.getenv("TARGET_DDB_TABLE")
 
 # Create a client for the AWS Analytical service to use
@@ -44,9 +43,6 @@ def lambda_handler(event, context):
     try:
 
         logger.info("Lambda event is [{}]".format(event))
-        # Note: For simplicity, parameters "target_job"
-        # and "target_ddb" are hardcoded values defined during deployment of thhe pipeline.
-        # Other parameters can be dynamically retrieved
         for record in event["Records"]:
             payload = json.loads(record["body"])
             logger.info("payload: ", payload)
@@ -63,10 +59,10 @@ def lambda_handler(event, context):
                 "body": {
                     "bucket": source_bucket,
                     "keysRawProc": [key_to_process],
-                    "targetJob": target_job,
                     "targetDDBTable": target_ddb,
                     "token": token,
                 },
+                "callbackToken": token
             }
 
             logger.info("Input Message is [{}]".format(message))

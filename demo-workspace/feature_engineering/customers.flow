@@ -15,7 +15,7 @@
           "description": null,
           "s3ExecutionContext": {
             "__typename": "S3ExecutionContext",
-            "s3Uri": "s3://sagemaker-ap-southeast-1-716175367532/mlops-demo/customers.csv",
+            "s3Uri": "",
             "s3ContentType": "csv",
             "s3HasHeader": true
           }
