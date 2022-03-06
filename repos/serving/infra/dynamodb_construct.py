@@ -44,6 +44,19 @@ class GlueDynamoDb(Construct):
             self, "LambdaRole", role_arn=lambda_role_arn
         )
 
+        lambda_role_immutable = iam.Role.from_role_arn(
+            self,
+            "LambdaRoleImmutable",
+            role_arn=lambda_role_arn,
+            mutable=False,
+        )
+        glue_role_immutable = iam.Role.from_role_arn(
+            self,
+            "GlueRoleImmutable",
+            role_arn=glue_role_arn,
+            mutable=False,
+        )
+
         logger.info("Create DynamoDB Table")
         table_ddb = dynamodb.Table(
             self,
@@ -81,10 +94,10 @@ class GlueDynamoDb(Construct):
             runtime=lambda_.Runtime.PYTHON_3_8,
             timeout=cdk.Duration.seconds(15),
             environment={"target_ddb_table": table_ddb.table_name},
-            role=lambda_role,
+            role=lambda_role_immutable,
         )
 
-        table_ddb.grant_read_data(self.function_read_ddb)
+        #         table_ddb.grant_read_data(self.function_read_ddb)
 
         # Glue
         logger.info("Create Glue Job and attach the pre-created role")
@@ -97,7 +110,7 @@ class GlueDynamoDb(Construct):
                 python_version=glue.PythonVersion.THREE,
                 script=glue.Code.from_asset(path="./scripts/glue/load-ddb-table.py"),
             ),
-            role=glue_role,
+            role=glue_role_immutable,
             description="Glue Job to upload the result of Batch Transform to DynamoDB for low-latency serving",
             default_arguments={
                 "--job-bookmark-option": "job-bookmark-enable",
@@ -170,12 +183,7 @@ class GlueDynamoDb(Construct):
             state_machine_name=f"sagemaker-{project_id}-DynamoDB_Loader",
             definition=definition,
             timeout=cdk.Duration.minutes(15),
-            role=iam.Role.from_role_arn(
-                self,
-                "LambdaRoleImmutable",
-                role_arn=lambda_role_arn,
-                mutable=False,
-            ),
+            role=lambda_role_immutable,
         )
 
         function_execute_sfn = lambda_python.PythonFunction(
@@ -191,7 +199,7 @@ class GlueDynamoDb(Construct):
                 "state_machine_arn": statemachine.state_machine_arn,
                 "TARGET_DDB_TABLE": table_ddb.table_name,
             },
-            role=lambda_role,
+            role=lambda_role_immutable,
         )
 
         function_execute_sfn.add_event_source(

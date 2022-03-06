@@ -10,7 +10,7 @@
     - [Install python 3.8.*](#install-python-38)
     - [Install Poetry](#install-poetry)
     - [Update *npm* and install CDK](#update-npm-and-install-cdk)
-    - [In necessary, bootstrap CDK in the account](#in-necessary-bootstrap-cdk-in-the-account)
+    - [If necessary, bootstrap CDK in the account](#if-necessary-bootstrap-cdk-in-the-account)
   - [Deploy the CDK project](#deploy-the-cdk-project)
 - [Solution](#solution)
 - [Running Costs](#running-costs)
@@ -65,7 +65,7 @@ To install the python virtual environment, steps are
 To activate the venv created by poetry:
 
 ```terminal
-~$ poetry shell
+poetry shell
 ```
 
 ## Deployment using AWS Cloud9
@@ -73,43 +73,52 @@ To deploy the project from [AWS Cloud9](https://aws.amazon.com/cloud9/), it is n
 
 #### Install python 3.8.*
 ```terminal
-~$ sudo amazon-linux-extras enable python3.8
-~$ sudo yum install python38 -y
+sudo amazon-linux-extras enable python3.8
+sudo yum install python38 -y
 ```
 
 #### Install Poetry
 ```terminal
-~$ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
 ```
 
 #### Update *npm* and install CDK
 ```terminal
-~$ npm install -g npm@latest cdk@latest
+npm install -g npm@latest cdk@latest
 ```
 
-#### In necessary, bootstrap CDK in the account
+#### If necessary, bootstrap CDK in the account
 ```terminal
-~$ export CDK_NEW_BOOTSTRAP=1
-~$ cdk bootstrap
+export CDK_NEW_BOOTSTRAP=1
+cdk bootstrap
 ```
 
 ### Deploy the CDK project
+Clone the repository:
+
+```terminal
+git clone https://github.com/aws-samples/amazon-sagemaker-mlops-with-featurestore-and-datawrangler.git --depth=1
+```
 
 After cloning the repository, `cd` into the repository root folder, then
 
 1. Install and activate the poetry environment
 ```terminal
-~$ poetry install
-~$ poetry shell
+poetry install --no-dev
+poetry shell
 ```
 2. Check that the project synthetize without issues
   ```terminal
   (env-name)~$ cdk synth
   ```
+3. Find Execution Role ARN to be associated with the Amazon SageMaker Project and store it in an environmental variable
+  ```terminal
+  (env-name)~$ export StudioUserRoleARN=<execution role ARN>
+  ```
 
 3. Deploy with CDK
   ```terminal
-  (env-name)~$ cdk deploy
+  (env-name)~$ cdk deploy --parameters StudioUserRoleARN=$EXECUTION_ROLE_ARN
   ```
 
 ## Solution
