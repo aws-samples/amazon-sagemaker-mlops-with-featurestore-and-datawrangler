@@ -10,6 +10,7 @@ sagemaker = "^2.54.0"
 aws-cdk-lib = ">=2.0.0rc1"
 constructs = ">=10.0.0"
 "aws-cdk.aws-lambda-python-alpha" = "^2.8.0-alpha.0"
+"aws-cdk.aws-glue-alpha" = "^2.15.0-alpha.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^21.7b0", allow-prereleases = true}

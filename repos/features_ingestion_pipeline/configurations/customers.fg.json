@@ -85,7 +85,7 @@
   },
   "OfflineStoreConfig": {
     "S3StorageConfig": {
-      "S3Uri": "s3://sagemaker-ap-southeast-1-570358149193/mlops-demo/fs/"
+      "S3Uri": "s3://bucket/key"
     },
     "DisableGlueTableCreation": false
   },

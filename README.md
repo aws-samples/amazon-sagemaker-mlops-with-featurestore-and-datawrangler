@@ -121,7 +121,7 @@ The solution consists of an Amazon SageMaker Project that deploys three CI/CD pi
 Each pipeline consists of
 
 1. Source stage, a CodeCommit repository
-2. Synth stage, that synthetizes a CDK project into a CloudFormation template
+2. Synth stage, that synthesizes a CDK project into a CloudFormation template
 3. Manual approval
 4. Deploy stage, that deploys the CloudFormation template
 
@@ -131,7 +131,7 @@ For a successful deployment of the entire architecture, it is necessary to uploa
 
 
 
-The SageMaker Project template also includes a Demo repository that contains two Jupyter Notebook, offering a walkthrough of the demo features and an overview of the Data Scientist specific workflow.
+The SageMaker Project template also includes a Demo repository that contains two Jupyter Notebook, offering a walk-through of the demo features and an overview of the Data Scientist specific workflow.
 
 
 
